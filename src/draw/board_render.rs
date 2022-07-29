@@ -54,7 +54,7 @@ impl<'a> BoardRenderer<'a> {
 
             for x in 0..self.board.size {
                 let pos_x = x * self.field_size * self.horizontal_scale + h_center + offset_x + 2;
-                let coord = Coordinate { x, y: y * self.board.size };
+                let coord = Coordinate { x, y: y * (self.board.size - 1) };
                 let label = self.board.coordinate_to_fieldname(&coord).horizontal;
 
                 self.terminal.move_cursor(pos_x, pos_y);

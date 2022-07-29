@@ -60,7 +60,7 @@ impl Board {
 
         FieldName {
             horizontal: offset_char('A', coordinate.x.try_into().unwrap()).to_string(),
-            vertical:  offset_char('1', coordinate.y.try_into().unwrap()).to_string(),
+            vertical:  offset_char('1', (self.size - coordinate.y - 1).try_into().unwrap()).to_string(),
         }
     }
 
@@ -68,8 +68,8 @@ impl Board {
         self.assert_coordinate(coordinate);
 
         match (coordinate.x + coordinate.y) % 2 {
-            0 => FieldColor::Black,
-            1 => FieldColor::White,
+            0 => FieldColor::White,
+            1 => FieldColor::Black,
             _ => panic!("Unreachable"),
         }
     }
