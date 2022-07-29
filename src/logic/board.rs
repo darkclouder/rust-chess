@@ -1,13 +1,12 @@
-use crate::logic::piece::Piece;
+use crate::logic::piece::{Piece, PieceType};
 use crate::logic::basic::Player;
-use crate::logic::piece;
 
 use std::fmt;
 
 
 pub enum TileContent {
     Empty,
-    Piece(Box<dyn Piece>),
+    Piece(Piece),
 }
 
 
@@ -49,8 +48,10 @@ impl Board {
             |_| array_init::array_init(|_| TileContent::Empty)
         );
 
-        tiles[0][0] = TileContent::Piece(Box::new(piece::Pawn { player: Player::White }));
-        tiles[0][2] = TileContent::Piece(Box::new(piece::Pawn { player: Player::Black }));
+        tiles[0][0] = TileContent::Piece(Piece { player: Player::White, piece_type: PieceType::Pawn });
+        tiles[0][1] = TileContent::Piece(Piece { player: Player::White, piece_type: PieceType::Rook });
+        tiles[0][2] = TileContent::Piece(Piece { player: Player::Black, piece_type: PieceType::King });
+        tiles[0][3] = TileContent::Piece(Piece { player: Player::Black, piece_type: PieceType::Queen });
 
         Self {
             tiles,

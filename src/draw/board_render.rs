@@ -113,16 +113,12 @@ impl<'a> BoardRenderer<'a> {
 
                 // Background
                 if x < self.board.size && y < self.board.size {
-                    let field_color = self.board.get_field_color_at(&Coordinate { x, y });
-                    let terminal_color = match field_color {
-                        FieldColor::White => color::Bg(color::White).to_string(),
-                        FieldColor::Black => color::Bg(color::Black).to_string(),
-                    };
+                    let background_color = self.get_background_color_at(&Coordinate { x, y });
 
                     for yi in 0..self.field_size {
                         for xi in 0..self.field_size * self.horizontal_scale {
                             self.terminal.move_cursor(pos_x + xi + 1, pos_y + yi + 1);
-                            write!(self.terminal.screen, "{} {}", terminal_color, color::Bg(color::Reset)).unwrap();
+                            write!(self.terminal.screen, "{} {}", background_color, color::Bg(color::Reset)).unwrap();
                         }
                     }
                 }
@@ -145,28 +141,18 @@ impl<'a> BoardRenderer<'a> {
 
                 if let TileContent::Piece(piece) = tile {
                     let symbol = piece.get_symbol();
-                    let player = piece.get_player();
 
-                    let label = match player {
+                    let label = match piece.player {
                         Player::White => symbol.to_ascii_uppercase(),
                         Player::Black => symbol.to_ascii_lowercase(),
                     };
-
-                    let foreground_color = match player {
-                        Player::White => color::Fg(color::Black).to_string(),
-                        Player::Black => color::Fg(color::White).to_string(),
-                        
-                    };
-                    let background_color = match player {
-                        Player::White => color::Bg(color::White).to_string(),
-                        Player::Black => color::Bg(color::Black).to_string(),
-                    };
+                    let background_color = self.get_background_color_at(&coordinate);
 
                     self.terminal.move_cursor(pos_x + h_center, pos_y + v_center);
                     write!(
                         self.terminal.screen,
-                        "{}{}{}{}{}",
-                        foreground_color,
+                        "{}{}{}{}",
+                        //foreground_color,
                         background_color,
                         label,
                         color::Bg(color::Reset),
@@ -180,5 +166,14 @@ impl<'a> BoardRenderer<'a> {
     fn draw_prompt(&mut self, offset_x: u16, offset_y: u16) {
         self.terminal.move_cursor(offset_x, offset_y);
         write!(self.terminal.screen, "> ").unwrap();
+    }
+
+    fn get_background_color_at(& self, coordinate: &Coordinate) -> String {
+        let field_color = self.board.get_field_color_at(&coordinate);
+
+        match field_color {
+            FieldColor::White => color::Bg(color::White).to_string(),
+            FieldColor::Black => color::Bg(color::Black).to_string(),
+        }
     }
 }
