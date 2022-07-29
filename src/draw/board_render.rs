@@ -10,7 +10,7 @@ pub struct BoardRenderer<'a> {
     board: &'a Board,
     terminal: Terminal,
     field_size: u16,
-    horizontal_ratio: u16,
+    horizontal_scale: u16,
 }
 
 
@@ -20,7 +20,7 @@ impl<'a> BoardRenderer<'a> {
             board,
             terminal: Terminal::default(),
             field_size: 4,
-            horizontal_ratio: 2,
+            horizontal_scale: 2,
         }
     }
 
@@ -39,21 +39,21 @@ impl<'a> BoardRenderer<'a> {
 
         self.terminal.clear_screen();
         self.draw_coordinates(0, 0);
-        self.draw_grid(1 * self.horizontal_ratio, 1);
+        self.draw_grid(1 * self.horizontal_scale, 1);
         self.draw_prompt(0, self.board.size * self.field_size + 4);
         self.terminal.flush();
     }
 
     fn draw_coordinates(&mut self, offset_x: u16, offset_y: u16) {
         let v_center = self.field_size / 2;
-        let h_center = v_center * self.horizontal_ratio;
+        let h_center = v_center * self.horizontal_scale;
 
         // Draw horizontal coordinates
         for y in 0..=1 {
             let pos_y = y * (self.board.size * self.field_size + 2) + offset_y;
 
             for x in 0..self.board.size {
-                let pos_x = x * self.field_size * self.horizontal_ratio + h_center + offset_x + 2;
+                let pos_x = x * self.field_size * self.horizontal_scale + h_center + offset_x + 2;
                 let coord = Coordinate { x, y: y * self.board.size };
                 let label = self.board.coordinate_to_fieldname(&coord).horizontal;
 
@@ -64,7 +64,7 @@ impl<'a> BoardRenderer<'a> {
 
         // Draw vertical coordinates
         for x in 0..=1 {
-            let pos_x = x * (self.board.size * self.field_size * self.horizontal_ratio + 4) + offset_x;
+            let pos_x = x * (self.board.size * self.field_size * self.horizontal_scale + 4) + offset_x;
 
             for y in 0..self.board.size {
                 let pos_y = y * self.field_size + v_center + offset_y + 1;
@@ -86,7 +86,7 @@ impl<'a> BoardRenderer<'a> {
             let pos_y = y * self.field_size + offset_y;
 
             for x in 0..=self.board.size {
-                let pos_x = x * self.field_size * self.horizontal_ratio + offset_x;
+                let pos_x = x * self.field_size * self.horizontal_scale + offset_x;
 
                 self.terminal.move_cursor(pos_x, pos_y);
 
@@ -95,7 +95,7 @@ impl<'a> BoardRenderer<'a> {
 
                 // Horizontal
                 if x < self.board.size {
-                    for _ in 1..(self.field_size * self.horizontal_ratio) {
+                    for _ in 1..(self.field_size * self.horizontal_scale) {
                         write!(self.terminal.screen, "{}", h_bar).unwrap();
                     }
                 }
@@ -118,7 +118,7 @@ impl<'a> BoardRenderer<'a> {
                     };
 
                     for yi in 0..self.field_size {
-                        for xi in 0..self.field_size * self.horizontal_ratio {
+                        for xi in 0..self.field_size * self.horizontal_scale {
                             self.terminal.move_cursor(pos_x + xi + 1, pos_y + yi + 1);
                             write!(self.terminal.screen, "{} {}", terminal_color, color::Bg(color::Reset)).unwrap();
                         }
