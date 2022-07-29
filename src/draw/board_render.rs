@@ -1,8 +1,8 @@
 use crate::draw::terminal::Terminal;
-use crate::logic::board::Board;
-use crate::logic::board::Coordinate;
+use crate::logic::board::{Board, Coordinate, FieldColor};
 
 use termion::event::Key;
+use termion::color;
 use std::io::Write;
 
 
@@ -106,6 +106,22 @@ impl<'a> BoardRenderer<'a> {
                         // TODO: Improve this so the cursor does not have to be moved for every line
                         self.terminal.move_cursor(pos_x, pos_y + w);
                         write!(self.terminal.screen, "{}", v_bar).unwrap();
+                    }
+                }
+
+                // Background
+                if x < self.board.size && y < self.board.size {
+                    let field_color = self.board.get_field_color_at(&Coordinate { x, y });
+                    let terminal_color = match field_color {
+                        FieldColor::Black => color::Bg(color::Black).to_string(),
+                        FieldColor::White => color::Bg(color::White).to_string(),
+                    };
+
+                    for yi in 0..self.field_size {
+                        for xi in 0..self.field_size * self.horizontal_ratio {
+                            self.terminal.move_cursor(pos_x + xi + 1, pos_y + yi + 1);
+                            write!(self.terminal.screen, "{} {}", terminal_color, color::Bg(color::Reset)).unwrap();
+                        }
                     }
                 }
             }

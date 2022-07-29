@@ -10,6 +10,12 @@ pub enum TileContent {
 }
 
 
+pub enum FieldColor {
+    White,
+    Black,
+}
+
+
 pub struct FieldName {
     pub horizontal: String,
     pub vertical: String,
@@ -50,13 +56,27 @@ impl Board {
     }
 
     pub fn coordinate_to_fieldname(& self, coordinate: &Coordinate) -> FieldName {
-        if coordinate.x > self.size || coordinate.y > self.size {
-            panic!("Coordinate out of bound: {}", coordinate);
-        }
+        self.assert_coordinate(coordinate);
 
         FieldName {
             horizontal: offset_char('A', coordinate.x.try_into().unwrap()).to_string(),
             vertical:  offset_char('1', coordinate.y.try_into().unwrap()).to_string(),
+        }
+    }
+
+    pub fn get_field_color_at(& self, coordinate: &Coordinate) -> FieldColor {
+        self.assert_coordinate(coordinate);
+
+        match (coordinate.x + coordinate.y) % 2 {
+            0 => FieldColor::Black,
+            1 => FieldColor::White,
+            _ => panic!("Unreachable"),
+        }
+    }
+
+    fn assert_coordinate(& self, coordinate: &Coordinate) {
+        if coordinate.x > self.size || coordinate.y > self.size {
+            panic!("Coordinate out of bound: {}", coordinate);
         }
     }
 }
