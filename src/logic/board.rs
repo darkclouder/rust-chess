@@ -1,12 +1,13 @@
 use crate::logic::piece::Piece;
 use crate::logic::basic::Player;
+use crate::logic::piece;
 
 use std::fmt;
 
 
 pub enum TileContent {
     Empty,
-    Occupied(Piece),
+    Piece(Box<dyn Piece>),
 }
 
 
@@ -29,7 +30,7 @@ pub struct Coordinate {
 
 
 impl fmt::Display for Coordinate {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(& self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "({}, {})", self.x, self.y)
     }
 }
@@ -44,15 +45,23 @@ pub struct Board {
 
 impl Board {
     pub fn default() -> Self {
-        let tiles: [[TileContent; 8]; 8] = array_init::array_init(
+        let mut tiles: [[TileContent; 8]; 8] = array_init::array_init(
             |_| array_init::array_init(|_| TileContent::Empty)
         );
+
+        tiles[0][0] = TileContent::Piece(Box::new(piece::Pawn { player: Player::White }));
+        tiles[0][2] = TileContent::Piece(Box::new(piece::Pawn { player: Player::Black }));
 
         Self {
             tiles,
             turn: Player::White,
             size: 8,
         }
+    }
+
+    pub fn get_tile(& self, coordinate: &Coordinate) -> &TileContent {
+        self.assert_coordinate(coordinate);
+        &self.tiles[coordinate.y as usize][coordinate.x as usize]
     }
 
     pub fn coordinate_to_fieldname(& self, coordinate: &Coordinate) -> FieldName {

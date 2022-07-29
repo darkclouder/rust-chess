@@ -1,5 +1,6 @@
 use crate::draw::terminal::Terminal;
-use crate::logic::board::{Board, Coordinate, FieldColor};
+use crate::logic::basic::Player;
+use crate::logic::board::{Board, Coordinate, FieldColor, TileContent};
 
 use termion::event::Key;
 use termion::color;
@@ -40,6 +41,7 @@ impl<'a> BoardRenderer<'a> {
         self.terminal.clear_screen();
         self.draw_coordinates(0, 0);
         self.draw_grid(1 * self.horizontal_scale, 1);
+        self.draw_pieces(1 * self.horizontal_scale, 1);
         self.draw_prompt(0, self.board.size * self.field_size + 4);
         self.terminal.flush();
     }
@@ -113,8 +115,8 @@ impl<'a> BoardRenderer<'a> {
                 if x < self.board.size && y < self.board.size {
                     let field_color = self.board.get_field_color_at(&Coordinate { x, y });
                     let terminal_color = match field_color {
-                        FieldColor::Black => color::Bg(color::Black).to_string(),
                         FieldColor::White => color::Bg(color::White).to_string(),
+                        FieldColor::Black => color::Bg(color::Black).to_string(),
                     };
 
                     for yi in 0..self.field_size {
@@ -123,6 +125,53 @@ impl<'a> BoardRenderer<'a> {
                             write!(self.terminal.screen, "{} {}", terminal_color, color::Bg(color::Reset)).unwrap();
                         }
                     }
+                }
+            }
+        }
+    }
+
+    fn draw_pieces(&mut self, offset_x: u16, offset_y: u16) {
+        let v_center = self.field_size / 2;
+        let h_center = v_center * self.horizontal_scale;
+
+        for y in 0..self.board.size {
+            let pos_y = y * self.field_size + offset_y;
+
+            for x in 0..self.board.size {
+                let pos_x = x * self.field_size * self.horizontal_scale + offset_x;
+
+                let coordinate = Coordinate { x, y };
+                let tile = self.board.get_tile(&coordinate);
+
+                if let TileContent::Piece(piece) = tile {
+                    let symbol = piece.get_symbol();
+                    let player = piece.get_player();
+
+                    let label = match player {
+                        Player::White => symbol.to_ascii_uppercase(),
+                        Player::Black => symbol.to_ascii_lowercase(),
+                    };
+
+                    let foreground_color = match player {
+                        Player::White => color::Fg(color::Black).to_string(),
+                        Player::Black => color::Fg(color::White).to_string(),
+                        
+                    };
+                    let background_color = match player {
+                        Player::White => color::Bg(color::White).to_string(),
+                        Player::Black => color::Bg(color::Black).to_string(),
+                    };
+
+                    self.terminal.move_cursor(pos_x + h_center, pos_y + v_center);
+                    write!(
+                        self.terminal.screen,
+                        "{}{}{}{}{}",
+                        foreground_color,
+                        background_color,
+                        label,
+                        color::Bg(color::Reset),
+                        color::Fg(color::Reset),
+                    ).unwrap();
                 }
             }
         }
