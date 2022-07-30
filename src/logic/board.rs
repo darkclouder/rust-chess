@@ -1,4 +1,4 @@
-use crate::logic::piece::{Piece, PieceType};
+use crate::logic::piece::{self, Piece};
 use crate::logic::basic::Player;
 
 use std::fmt;
@@ -48,10 +48,10 @@ impl Board {
             |_| array_init::array_init(|_| TileContent::Empty)
         );
 
-        tiles[0][0] = TileContent::Piece(Piece { player: Player::White, piece_type: PieceType::Pawn });
-        tiles[0][1] = TileContent::Piece(Piece { player: Player::White, piece_type: PieceType::Rook });
-        tiles[0][2] = TileContent::Piece(Piece { player: Player::Black, piece_type: PieceType::King });
-        tiles[0][3] = TileContent::Piece(Piece { player: Player::Black, piece_type: PieceType::Queen });
+        tiles[0][0] = TileContent::Piece(Piece { player: Player::White, piece_type: Box::new(piece::Pawn::new()) });
+        tiles[0][1] = TileContent::Piece(Piece { player: Player::White, piece_type: Box::new(piece::Rook::new()) });
+        tiles[0][2] = TileContent::Piece(Piece { player: Player::Black, piece_type: Box::new(piece::King::new()) });
+        tiles[0][3] = TileContent::Piece(Piece { player: Player::Black, piece_type: Box::new(piece::Queen::new()) });
 
         Self {
             tiles,
