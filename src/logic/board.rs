@@ -5,6 +5,10 @@ use crate::utils::DiscreetUnwrap;
 use std::fmt;
 
 
+pub const BOARD_SIZE: u16 = 8;
+pub const BOARD_SIZE_USIZE: usize = 8;
+
+
 pub enum TileContent {
     Empty,
     Piece(Piece),
@@ -66,9 +70,8 @@ impl fmt::Display for Coordinate {
 
 
 pub struct Board {
-    pub tiles: [[TileContent; 8]; 8],
+    pub tiles: [[TileContent; BOARD_SIZE_USIZE]; BOARD_SIZE_USIZE],
     pub turn: Player,
-    pub size: u16,
 }
 
 
@@ -93,7 +96,6 @@ impl Board {
         Self {
             tiles,
             turn: Player::White,
-            size: 8,
         }
     }
 
@@ -105,9 +107,12 @@ impl Board {
     pub fn coordinate_to_fieldname(& self, coordinate: &Coordinate) -> FieldName {
         self.assert_coordinate(coordinate);
 
+        let hpos = coordinate.x;
+        let vpos = BOARD_SIZE - coordinate.y - 1;
+
         FieldName {
-            horizontal: offset_char('A', coordinate.x.try_into().unwrap()).to_string(),
-            vertical:  offset_char('1', (self.size - coordinate.y - 1).try_into().unwrap()).to_string(),
+            horizontal: offset_char('A', hpos.try_into().unwrap()).to_string(),
+            vertical:  offset_char('1', vpos.try_into().unwrap()).to_string(),
         }
     }
 
@@ -122,7 +127,7 @@ impl Board {
     }
 
     fn assert_coordinate(& self, coordinate: &Coordinate) {
-        if coordinate.x > self.size || coordinate.y > self.size {
+        if coordinate.x > BOARD_SIZE || coordinate.y > BOARD_SIZE {
             panic!("Coordinate out of bound: {}", coordinate);
         }
     }
@@ -137,7 +142,7 @@ fn offset_char(c: char, n: i8) -> char {
 }
 
 
-const DEFAULT_PIECE_CONFIGURATION: [[char; 8]; 8] = [
+const DEFAULT_PIECE_CONFIGURATION: [[char; BOARD_SIZE_USIZE]; BOARD_SIZE_USIZE] = [
     ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
     ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
     [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],

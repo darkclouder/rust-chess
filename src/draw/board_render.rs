@@ -1,6 +1,6 @@
 use crate::draw::terminal::Terminal;
 use crate::logic::basic::Player;
-use crate::logic::board::{Board, Coordinate, FieldColor, TileContent};
+use crate::logic::board::{Board, Coordinate, FieldColor, TileContent, BOARD_SIZE};
 
 use termion::event::Key;
 use termion::color;
@@ -42,7 +42,7 @@ impl<'a> BoardRenderer<'a> {
         self.draw_coordinates(0, 0);
         self.draw_grid(1 * self.horizontal_scale, 1);
         self.draw_pieces(1 * self.horizontal_scale, 1);
-        self.draw_prompt(0, self.board.size * self.field_size + 4);
+        self.draw_prompt(0, BOARD_SIZE * self.field_size + 4);
         self.terminal.flush();
     }
 
@@ -52,11 +52,11 @@ impl<'a> BoardRenderer<'a> {
 
         // Draw horizontal coordinates
         for y in 0..=1 {
-            let pos_y = y * (self.board.size * self.field_size + 2) + offset_y;
+            let pos_y = y * (BOARD_SIZE * self.field_size + 2) + offset_y;
 
-            for x in 0..self.board.size {
+            for x in 0..BOARD_SIZE {
                 let pos_x = x * self.field_size * self.horizontal_scale + h_center + offset_x + 2;
-                let coord = Coordinate { x, y: y * (self.board.size - 1) };
+                let coord = Coordinate { x, y: y * (BOARD_SIZE - 1) };
                 let label = self.board.coordinate_to_fieldname(&coord).horizontal;
 
                 self.terminal.move_cursor(pos_x, pos_y);
@@ -66,11 +66,11 @@ impl<'a> BoardRenderer<'a> {
 
         // Draw vertical coordinates
         for x in 0..=1 {
-            let pos_x = x * (self.board.size * self.field_size * self.horizontal_scale + 4) + offset_x;
+            let pos_x = x * (BOARD_SIZE * self.field_size * self.horizontal_scale + 4) + offset_x;
 
-            for y in 0..self.board.size {
+            for y in 0..BOARD_SIZE {
                 let pos_y = y * self.field_size + v_center + offset_y + 1;
-                let coord = Coordinate { x: x * self.board.size, y };
+                let coord = Coordinate { x: x * BOARD_SIZE, y };
                 let label = self.board.coordinate_to_fieldname(&coord).vertical;
 
                 self.terminal.move_cursor(pos_x, pos_y);
@@ -84,10 +84,10 @@ impl<'a> BoardRenderer<'a> {
         let v_bar = '|';
         let cross = '+';
 
-        for y in 0..=self.board.size {
+        for y in 0..=BOARD_SIZE {
             let pos_y = y * self.field_size + offset_y;
 
-            for x in 0..=self.board.size {
+            for x in 0..=BOARD_SIZE {
                 let pos_x = x * self.field_size * self.horizontal_scale + offset_x;
 
                 self.terminal.move_cursor(pos_x, pos_y);
@@ -96,14 +96,14 @@ impl<'a> BoardRenderer<'a> {
                 write!(self.terminal.screen, "{}", cross).unwrap();
 
                 // Horizontal
-                if x < self.board.size {
+                if x < BOARD_SIZE {
                     for _ in 1..(self.field_size * self.horizontal_scale) {
                         write!(self.terminal.screen, "{}", h_bar).unwrap();
                     }
                 }
 
                 // Vertical
-                if y < self.board.size {
+                if y < BOARD_SIZE {
                     for w in 1..self.field_size {
                         // TODO: Improve this so the cursor does not have to be moved for every line
                         self.terminal.move_cursor(pos_x, pos_y + w);
@@ -112,7 +112,7 @@ impl<'a> BoardRenderer<'a> {
                 }
 
                 // Background
-                if x < self.board.size && y < self.board.size {
+                if x < BOARD_SIZE && y < BOARD_SIZE {
                     let background_color = self.get_background_color_at(&Coordinate { x, y });
 
                     for yi in 0..self.field_size {
@@ -130,10 +130,10 @@ impl<'a> BoardRenderer<'a> {
         let v_center = self.field_size / 2;
         let h_center = v_center * self.horizontal_scale;
 
-        for y in 0..self.board.size {
+        for y in 0..BOARD_SIZE {
             let pos_y = y * self.field_size + offset_y;
 
-            for x in 0..self.board.size {
+            for x in 0..BOARD_SIZE {
                 let pos_x = x * self.field_size * self.horizontal_scale + offset_x;
 
                 let coordinate = Coordinate { x, y };
