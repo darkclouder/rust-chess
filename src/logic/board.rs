@@ -1,5 +1,6 @@
-use crate::logic::piece::{self, Piece};
+use crate::logic::piece::{self, Piece, PieceType};
 use crate::logic::basic::Player;
+use crate::utils::DiscreetUnwrap;
 
 use std::fmt;
 
@@ -7,6 +8,35 @@ use std::fmt;
 pub enum TileContent {
     Empty,
     Piece(Piece),
+}
+
+
+impl TileContent {
+    pub fn from_letter(letter: char) -> Self {
+        if letter == ' ' {
+            return Self::Empty
+        }
+
+        let player = match letter {
+            'A'..='Z' => Player::White,
+            'a'..='z' => Player::Black,
+            _ => panic!("Invalid letter group"),
+        };
+        
+        let upper_letter = letter.to_ascii_uppercase();
+
+        let piece_type: Box<dyn PieceType> = match upper_letter {
+            'K' => Box::new(piece::King::new()),
+            'Q' => Box::new(piece::Queen::new()),
+            'R' => Box::new(piece::Rook::new()),
+            'B' => Box::new(piece::Bishop::new()),
+            'N' => Box::new(piece::Knight::new()),
+            'P' => Box::new(piece::Pawn::new()),
+            _ => panic!("Invalid letter"),
+        };
+
+        Self::Piece(Piece { piece_type,  player, })
+    }
 }
 
 
@@ -44,14 +74,21 @@ pub struct Board {
 
 impl Board {
     pub fn default() -> Self {
-        let mut tiles: [[TileContent; 8]; 8] = array_init::array_init(
-            |_| array_init::array_init(|_| TileContent::Empty)
-        );
-
-        tiles[0][0] = TileContent::Piece(Piece { player: Player::White, piece_type: Box::new(piece::Pawn::new()) });
-        tiles[0][1] = TileContent::Piece(Piece { player: Player::White, piece_type: Box::new(piece::Rook::new()) });
-        tiles[0][2] = TileContent::Piece(Piece { player: Player::Black, piece_type: Box::new(piece::King::new()) });
-        tiles[0][3] = TileContent::Piece(Piece { player: Player::Black, piece_type: Box::new(piece::Queen::new()) });
+        let tiles = DEFAULT_PIECE_CONFIGURATION
+            .into_iter()
+            .map(|row| {
+                row
+                    .into_iter()
+                    .map(|letter| {
+                        TileContent::from_letter(letter)
+                    })
+                    .collect::<Vec<_>>()
+                    .try_into()
+                    .duwrp()
+            })
+            .collect::<Vec<_>>()
+            .try_into()
+            .duwrp();
 
         Self {
             tiles,
@@ -98,3 +135,15 @@ fn offset_char(c: char, n: i8) -> char {
     assert!(ret.is_ascii_alphanumeric());
     ret
 }
+
+
+const DEFAULT_PIECE_CONFIGURATION: [[char; 8]; 8] = [
+    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+    ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'],
+];
