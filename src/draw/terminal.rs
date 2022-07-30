@@ -37,12 +37,6 @@ impl Terminal {
         }
     }
 
-    /*
-    pub fn write(&mut self, buf: &[u16]) {
-        write!(self.screen, buf).unwrap();
-    }
-    */
-
     pub fn clear_screen(&mut self) {
         write!(self.screen, "{}", termion::clear::All).unwrap();
     }

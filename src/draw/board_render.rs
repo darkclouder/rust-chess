@@ -1,15 +1,18 @@
+use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
 use crate::logic::basic::Player;
 use crate::logic::board::{Board, Coordinate, FieldColor, TileContent, BOARD_SIZE};
+use crate::logic::intent::Intent;
 
-use termion::event::Key;
 use termion::color;
+use termion::event::Key;
 use std::io::Write;
 
 
 pub struct BoardRenderer<'a> {
     board: &'a Board,
     terminal: Terminal,
+    prompt: Prompt,
     field_size: u16,
     horizontal_scale: u16,
 }
@@ -20,6 +23,7 @@ impl<'a> BoardRenderer<'a> {
         Self {
             board,
             terminal: Terminal::default(),
+            prompt: Prompt::default(),
             field_size: 4,
             horizontal_scale: 2,
         }
@@ -29,10 +33,45 @@ impl<'a> BoardRenderer<'a> {
         loop {
             self.draw_board();
 
-            if let Some(Key::Char(_)) = self.terminal.read_key() {
-                write!(self.terminal.screen, "bla").unwrap()
+            if let Some(key) = self.terminal.read_key() {
+                match key {
+                    Key::Char('\n') => self.on_prompt_enter(),
+                    Key::Char('\t') => self.on_prompt_tab(),
+                    k => self.prompt.consume_key(&k),
+                }
             }
         }
+    }
+
+    fn draw_prompt(&mut self, offset_x: u16, offset_y: u16) {
+        let line = self.prompt.get_line();
+        let formatted_line = self.format_prompt(&line);
+
+        self.terminal.move_cursor(offset_x, offset_y);
+        write!(self.terminal.screen, "> {}", formatted_line).unwrap();
+    }
+
+    fn format_prompt(&self, line: &String) -> String {
+        let intent = Intent::from_partial_command(line);
+
+        match intent {
+            Intent::Invalid => format!(
+                "{}{}{}",
+                color::Fg(color::Red),
+                line,
+                color::Fg(color::Reset),
+            ),
+            _ => line.clone()
+        }
+    }
+
+    fn on_prompt_enter(&mut self) {
+        self.prompt.clear();
+        // TODO
+    }
+
+    fn on_prompt_tab(&self) {
+        // TODO
     }
 
     fn draw_board(&mut self) {
@@ -161,11 +200,6 @@ impl<'a> BoardRenderer<'a> {
                 }
             }
         }
-    }
-
-    fn draw_prompt(&mut self, offset_x: u16, offset_y: u16) {
-        self.terminal.move_cursor(offset_x, offset_y);
-        write!(self.terminal.screen, "> ").unwrap();
     }
 
     fn get_background_color_at(& self, coordinate: &Coordinate) -> String {
