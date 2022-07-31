@@ -34,7 +34,7 @@ impl Intent {
         match Self::try_parse_move(cmd) {
             Ok(Some(intent)) => return intent,
             Ok(None) => (),
-            Err(_) => return Self::Invalid,
+            Err(_) => (),
         };
 
         match Self::parse_surrender(cmd) {
