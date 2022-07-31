@@ -1,12 +1,35 @@
 use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
-use crate::logic::basic::Player;
-use crate::logic::board::{Board, Coordinate, FieldColor, TileContent, BOARD_SIZE};
+use crate::logic::basic::{Coordinate, Player};
+use crate::logic::board::{
+    Board, FieldColor, TileContent, BOARD_SIZE, BOARD_SIZE_USIZE
+};
 use crate::logic::intent::Intent;
 
 use termion::color;
 use termion::event::Key;
 use std::io::Write;
+
+
+#[derive(Copy, Clone)]
+enum BoardHighlight {
+    None,
+    Primary,
+    Secondary,
+    Error,
+}
+
+
+impl BoardHighlight {
+    fn to_background_color(&self) -> String {
+        match self {
+            Self::Primary => color::Bg(color::Green).to_string(),
+            Self::Secondary => color::Bg(color::Blue).to_string(),
+            Self::Error => color::Bg(color::Red).to_string(),
+            Self::None => "".to_string(),
+        }
+    }
+}
 
 
 pub struct BoardRenderer<'a> {
@@ -15,6 +38,7 @@ pub struct BoardRenderer<'a> {
     prompt: Prompt,
     field_size: u16,
     horizontal_scale: u16,
+    highlighted_cells: [[BoardHighlight; BOARD_SIZE_USIZE]; BOARD_SIZE_USIZE],
 }
 
 
@@ -26,6 +50,7 @@ impl<'a> BoardRenderer<'a> {
             prompt: Prompt::default(),
             field_size: 4,
             horizontal_scale: 2,
+            highlighted_cells: [[BoardHighlight::None; BOARD_SIZE_USIZE]; BOARD_SIZE_USIZE],
         }
     }
 
@@ -43,17 +68,42 @@ impl<'a> BoardRenderer<'a> {
         }
     }
 
-    fn draw_prompt(&mut self, offset_x: u16, offset_y: u16) {
-        let line = self.prompt.get_line();
-        let formatted_line = self.format_prompt(&line);
+    pub fn evaluate_intent(&mut self, intent: &Intent) {
+        match intent {
+            Intent::Move(Some(a), maybe_b) => {
+                self.clear_highlight();
 
+                let test = a.to_complete();
+
+                if let Some(coord_a) = a.to_complete() {
+                    self.highlighted_cells[coord_a.y as usize][coord_a.x as usize] = BoardHighlight::Primary;
+                }
+
+                if let Some(b) = maybe_b {
+                    if let Some(coord_b) = b.to_complete() {
+                        self.highlighted_cells[coord_b.y as usize][coord_b.x as usize] = BoardHighlight::Secondary;
+                    }
+                }
+            },
+            _ => (),
+        }
+    }
+
+    fn clear_highlight(&mut self) {
+        for y in 0..BOARD_SIZE_USIZE {
+            for x in 0..BOARD_SIZE_USIZE {
+                self.highlighted_cells[y][x] = BoardHighlight::None;
+            }
+        }
+    }
+
+    fn draw_prompt(&mut self, offset_x: u16, offset_y: u16, line: &String, intent: &Intent) {
+        let formatted_line = self.format_prompt(&line, &intent);
         self.terminal.move_cursor(offset_x, offset_y);
         write!(self.terminal.screen, "> {}", formatted_line).unwrap();
     }
 
-    fn format_prompt(&self, line: &String) -> String {
-        let intent = Intent::from_partial_command(line);
-
+    fn format_prompt(&self, line: &String, intent: &Intent) -> String {
         match intent {
             Intent::Invalid => format!(
                 "{}{}{}",
@@ -77,11 +127,16 @@ impl<'a> BoardRenderer<'a> {
     fn draw_board(&mut self) {
         // TODO: get terminal size and only draw if size is sufficient
 
+        let line = self.prompt.get_line();
+        let intent = Intent::from_partial_command(&line);
+
+        self.evaluate_intent(&intent);
+
         self.terminal.clear_screen();
         self.draw_coordinates(0, 0);
         self.draw_grid(1 * self.horizontal_scale, 1);
         self.draw_pieces(1 * self.horizontal_scale, 1);
-        self.draw_prompt(0, BOARD_SIZE * self.field_size + 4);
+        self.draw_prompt(0, BOARD_SIZE * self.field_size + 4, &line, &intent);
         self.terminal.flush();
     }
 
@@ -153,11 +208,31 @@ impl<'a> BoardRenderer<'a> {
                 // Background
                 if x < BOARD_SIZE && y < BOARD_SIZE {
                     let background_color = self.get_background_color_at(&Coordinate { x, y });
+                    let board_highlight = &self.highlighted_cells[y as usize][x as usize];
+                    let is_highlighted = match board_highlight {
+                        BoardHighlight::None => false,
+                        _ => true,
+                    };
 
                     for yi in 0..self.field_size {
                         for xi in 0..self.field_size * self.horizontal_scale {
                             self.terminal.move_cursor(pos_x + xi + 1, pos_y + yi + 1);
-                            write!(self.terminal.screen, "{} {}", background_color, color::Bg(color::Reset)).unwrap();
+
+                            if is_highlighted && xi % 2 == 0 && yi % 2 == 0 {
+                                write!(
+                                    self.terminal.screen,
+                                    "{}*{}",
+                                    board_highlight.to_background_color(),
+                                    color::Bg(color::Reset),
+                                ).unwrap();
+                            } else {
+                                write!(
+                                    self.terminal.screen,
+                                    "{} {}",
+                                    background_color,
+                                    color::Bg(color::Reset),
+                                ).unwrap();
+                            };
                         }
                     }
                 }
@@ -191,7 +266,6 @@ impl<'a> BoardRenderer<'a> {
                     write!(
                         self.terminal.screen,
                         "{}{}{}{}",
-                        //foreground_color,
                         background_color,
                         label,
                         color::Bg(color::Reset),

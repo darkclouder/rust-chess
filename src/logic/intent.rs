@@ -1,6 +1,24 @@
+use crate::logic::board::BOARD_SIZE;
+use crate::logic::basic::Coordinate;
 use crate::utils::ValueError;
 
 use std::str::Chars;
+
+
+pub struct PartialCoordinate {
+    pub x: Option<u16>,
+    pub y: Option<u16>,
+}
+
+
+impl PartialCoordinate {
+    pub fn to_complete(& self) -> Option<Coordinate> {
+        match (self.x, self.y) {
+            (Some(actual_x), Some(actual_y)) => Some(Coordinate { x: actual_x, y: actual_y }),
+            _ => None
+        }
+    }
+}
 
 
 pub enum Intent {
@@ -8,12 +26,6 @@ pub enum Intent {
     Surrender,
     Invalid,
     None,
-}
-
-
-pub struct PartialCoordinate {
-    pub x: Option<u16>,
-    pub y: Option<u16>,
 }
 
 
@@ -108,7 +120,7 @@ fn char_to_column(letter: char) -> Result<u16, ValueError> {
 
 fn char_to_row(letter: char) -> Result<u16, ValueError> {
     match letter {
-        c @ '1'..='8' => Ok(8 - (c as u16 - '1' as u16)),
+        c @ '1'..='8' => Ok(BOARD_SIZE - 1 - (c as u16 - '1' as u16)),
         _ => Err(ValueError),
     }
 }

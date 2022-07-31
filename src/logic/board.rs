@@ -1,8 +1,6 @@
 use crate::logic::piece::{self, Piece, PieceType};
-use crate::logic::basic::Player;
+use crate::logic::basic::{Coordinate, Player};
 use crate::utils::DiscreetUnwrap;
-
-use std::fmt;
 
 
 pub const BOARD_SIZE: u16 = 8;
@@ -50,22 +48,10 @@ pub enum FieldColor {
 }
 
 
+// TODO: refactor this
 pub struct FieldName {
     pub horizontal: String,
     pub vertical: String,
-}
-
-
-pub struct Coordinate {
-    pub x: u16,
-    pub y: u16,
-}
-
-
-impl fmt::Display for Coordinate {
-    fn fmt(& self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "({}, {})", self.x, self.y)
-    }
 }
 
 
@@ -104,7 +90,17 @@ impl Board {
         &self.tiles[coordinate.y as usize][coordinate.x as usize]
     }
 
+    pub fn can_move_from(& self, coordinate: &Coordinate) -> bool {
+        let tile = self.get_tile(coordinate);
+        
+        match tile {
+            TileContent::Empty => false,
+            TileContent::Piece(piece) => piece.player == self.turn,
+        }
+    }
+
     pub fn coordinate_to_fieldname(& self, coordinate: &Coordinate) -> FieldName {
+        // TODO: Refactor this
         self.assert_coordinate(coordinate);
 
         let hpos = coordinate.x;
