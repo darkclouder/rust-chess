@@ -277,7 +277,7 @@ impl<'a> BoardRenderer<'a> {
                         for xi in 0..self.field_size * self.horizontal_scale {
                             self.terminal.move_cursor(pos_x + xi + 1, pos_y + yi + 1);
 
-                            if is_highlighted && xi % 2 == 0 && yi % 2 == 0 {
+                            if is_highlighted && (xi + yi) % 2 == 0 {
                                 write!(
                                     self.terminal.screen,
                                     "{}*{}",
