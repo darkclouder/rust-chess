@@ -1,3 +1,3 @@
-pub mod board_render;
+pub mod game_render;
 pub mod terminal;
 pub mod prompt;

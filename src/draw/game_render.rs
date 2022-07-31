@@ -41,7 +41,7 @@ impl BoardHighlight {
 }
 
 
-pub struct BoardRenderer<'a> {
+pub struct GameRenderer<'a> {
     board: &'a Board,
     terminal: Terminal,
     prompt: Prompt,
@@ -51,7 +51,7 @@ pub struct BoardRenderer<'a> {
 }
 
 
-impl<'a> BoardRenderer<'a> {
+impl<'a> GameRenderer<'a> {
     pub fn new(board: &'a Board) -> Self {
         Self {
             board,
