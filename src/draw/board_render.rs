@@ -29,6 +29,15 @@ impl BoardHighlight {
             Self::None => "".to_string(),
         }
     }
+
+    fn to_foreground_color(&self) -> String {
+        match self {
+            Self::Primary => color::Fg(color::Green).to_string(),
+            Self::Secondary => color::Fg(color::Blue).to_string(),
+            Self::Error => color::Fg(color::Red).to_string(),
+            Self::None => "".to_string(),
+        }
+    }
 }
 
 
@@ -73,14 +82,19 @@ impl<'a> BoardRenderer<'a> {
             Intent::Move(Some(a), maybe_b) => {
                 self.clear_highlight();
 
-                let test = a.to_complete();
-
                 if let Some(coord_a) = a.to_complete() {
-                    self.highlighted_cells[coord_a.y as usize][coord_a.x as usize] = BoardHighlight::Primary;
+                    let highlight = if self.board.can_move_from(&coord_a) {
+                        BoardHighlight::Primary
+                    } else {
+                        BoardHighlight::Error
+                    };
+
+                    self.highlighted_cells[coord_a.y as usize][coord_a.x as usize] = highlight;
                 }
 
                 if let Some(b) = maybe_b {
                     if let Some(coord_b) = b.to_complete() {
+                        // TODO: check if move is valid
                         self.highlighted_cells[coord_b.y as usize][coord_b.x as usize] = BoardHighlight::Secondary;
                     }
                 }
@@ -111,6 +125,51 @@ impl<'a> BoardRenderer<'a> {
                 line,
                 color::Fg(color::Reset),
             ),
+            Intent::Move(Some(a), maybe_b) => {
+                if let Some(coord_a) = a.to_complete() {
+                    let highlight = if self.board.can_move_from(&coord_a) {
+                        BoardHighlight::Primary
+                    } else {
+                        BoardHighlight::Error
+                    };
+
+                    let field_name_a = coord_a.to_field_name();
+                    let highlighted_a = format!(
+                        "{}{}{}",
+                        highlight.to_foreground_color(),
+                        field_name_a,
+                        color::Fg(color::Reset),
+                    );
+
+                    let remaining = &line[field_name_a.len()..];
+
+                    let highlighted_b = if let Some(b) = maybe_b {
+                        if let Some(coord_b) = b.to_complete() {
+                            format!(
+                                "{}{}{}",
+                                // TODO: Check if move is valid
+                                BoardHighlight::Secondary.to_foreground_color(),
+                                coord_b.to_field_name(),
+                                color::Fg(color::Reset),
+                            )
+                        } else {
+                            remaining.to_string()
+                        }
+                    } else {
+                        remaining.to_string()
+                    };
+
+                    format!(
+                        "{}{} to {}{}",
+                        highlighted_a,
+                        color::Fg(color::LightBlack),
+                        color::Fg(color::Reset),
+                        highlighted_b,
+                    )
+                } else {
+                    line.clone()
+                }
+            },
             _ => line.clone()
         }
     }

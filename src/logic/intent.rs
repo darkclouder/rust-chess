@@ -54,17 +54,13 @@ impl Intent {
 
         match first_coord {
             Some(first) => {
-                if prefixes_from_chars(&mut chars, " to ") {
-                    let second_coord = coordinate_from_chars(&mut chars)?;
+                let second_coord = coordinate_from_chars(&mut chars)?;
 
-                    match chars.next() {
-                        None => Ok(Some(Self::Move(Some(first), second_coord))),
-                        _ => Err(ValueError),
-                    }
-                } else {
-                    Err(ValueError)
+                match chars.next() {
+                    None => Ok(Some(Self::Move(Some(first), second_coord))),
+                    _ => Err(ValueError),
                 }
-            },
+        },
             None => Ok(None),
         }
     }

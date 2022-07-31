@@ -1,9 +1,20 @@
+use crate::logic::board::BOARD_SIZE;
+
 use std::fmt;
 
 
 pub struct Coordinate {
     pub x: u16,
     pub y: u16,
+}
+
+
+impl Coordinate {
+    pub fn to_field_name(&self) -> String {
+        // TODO: Make this safe
+        let column = (self.x + ('A' as u16)) as u8 as char;
+        format!("{}{}", column, BOARD_SIZE - self.y)
+    }
 }
 
 
