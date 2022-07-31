@@ -1,3 +1,4 @@
+use crate::draw::text::{LABEL_WHITE, LABEL_BLACK};
 use crate::logic::board::BOARD_SIZE;
 
 use std::fmt;
@@ -29,4 +30,14 @@ impl fmt::Display for Coordinate {
 pub enum Player {
     White,
     Black,
+}
+
+
+impl Player {
+    pub fn to_label(&self) -> &str {
+        match self {
+            Player::White => LABEL_WHITE,
+            Player::Black => LABEL_BLACK,
+        }
+    }
 }

@@ -1,3 +1,5 @@
+use crate::{FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_ERROR_MOVE_A};
+use crate::draw::text::OUTPUT_ENTER_MOVE;
 use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
 use crate::logic::basic::{Coordinate, Player};
@@ -48,6 +50,7 @@ pub struct GameRenderer<'a> {
     field_size: u16,
     horizontal_scale: u16,
     highlighted_cells: [[BoardHighlight; BOARD_SIZE_USIZE]; BOARD_SIZE_USIZE],
+    output_text: String,
 }
 
 
@@ -60,6 +63,7 @@ impl<'a> GameRenderer<'a> {
             field_size: 4,
             horizontal_scale: 2,
             highlighted_cells: [[BoardHighlight::None; BOARD_SIZE_USIZE]; BOARD_SIZE_USIZE],
+            output_text: "".to_string(),
         }
     }
 
@@ -86,6 +90,7 @@ impl<'a> GameRenderer<'a> {
                     let highlight = if self.board.can_move_from(&coord_a) {
                         BoardHighlight::Primary
                     } else {
+                        self.set_output_text(FORMAT_OUTPUT_ERROR_MOVE_A!(coord_a.to_field_name()));
                         BoardHighlight::Error
                     };
 
@@ -96,6 +101,7 @@ impl<'a> GameRenderer<'a> {
                     if let Some(coord_b) = b.to_complete() {
                         // TODO: check if move is valid
                         self.highlighted_cells[coord_b.y as usize][coord_b.x as usize] = BoardHighlight::Secondary;
+                        self.set_output_text(OUTPUT_ENTER_MOVE.to_string());
                     }
                 }
             },
@@ -113,16 +119,13 @@ impl<'a> GameRenderer<'a> {
 
     fn draw_prompt(&mut self, offset_x: u16, offset_y: u16, line: &String, intent: &Intent) {
         let formatted_line = self.format_prompt(&line, &intent);
-        let turn = match self.board.turn {
-            Player::White => "White",
-            Player::Black => "Black",
-        };
+        let turn = self.board.turn.to_label();
 
         self.terminal.move_cursor(offset_x, offset_y);
         write!(self.terminal.screen, "{}> {}", turn, formatted_line).unwrap();
     }
 
-    fn format_prompt(&self, line: &String, intent: &Intent) -> String {
+    fn format_prompt(&mut self, line: &String, intent: &Intent) -> String {
         match intent {
             Intent::Invalid => format!(
                 "{}{}{}",
@@ -195,14 +198,25 @@ impl<'a> GameRenderer<'a> {
         let line = self.prompt.get_line();
         let intent = Intent::from_partial_command(&line);
 
+        self.set_output_text(FORMAT_OUTPUT_TURN!(self.board.turn.to_label()));
         self.evaluate_intent(&intent);
 
         self.terminal.clear_screen();
         self.draw_coordinates(0, 0);
         self.draw_grid(1 * self.horizontal_scale, 1);
         self.draw_pieces(1 * self.horizontal_scale, 1);
+        self.draw_output(0, BOARD_SIZE * self.field_size + 5);
         self.draw_prompt(0, BOARD_SIZE * self.field_size + 4, &line, &intent);
         self.terminal.flush();
+    }
+
+    fn set_output_text(&mut self, new_text: String) {
+        self.output_text = new_text;
+    }
+
+    fn draw_output(&mut self, offset_x: u16, offset_y: u16) {
+        self.terminal.move_cursor(offset_x, offset_y);
+        write!(self.terminal.screen, "{}", self.output_text).unwrap();
     }
 
     fn draw_coordinates(&mut self, offset_x: u16, offset_y: u16) {
