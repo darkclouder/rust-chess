@@ -99,6 +99,21 @@ impl Board {
         }
     }
 
+    pub fn can_move(& self, from: &Coordinate, to: &Coordinate) -> bool {
+        let tile = self.get_tile(&from);
+        
+        match tile {
+            TileContent::Empty => false,
+            TileContent::Piece(piece) => {
+                if piece.player == self.turn {
+                    piece.can_move(self, from, to)
+                } else {
+                    false
+                }
+            },
+        }
+    }
+
     pub fn coordinate_to_fieldname(& self, coordinate: &Coordinate) -> FieldName {
         // TODO: Refactor this
         self.assert_coordinate(coordinate);

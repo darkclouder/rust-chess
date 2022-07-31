@@ -1,4 +1,4 @@
-use crate::{FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_ERROR_MOVE_A};
+use crate::{FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_ERROR_MOVE_FROM, FORMAT_OUTPUT_ERROR_MOVE_FULL};
 use crate::draw::text::OUTPUT_ENTER_MOVE;
 use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
@@ -6,7 +6,7 @@ use crate::logic::basic::{Coordinate, Player};
 use crate::logic::board::{
     Board, FieldColor, TileContent, BOARD_SIZE, BOARD_SIZE_USIZE
 };
-use crate::logic::intent::Intent;
+use crate::logic::intent::{Intent, PartialCoordinate};
 
 use termion::color;
 use termion::event::Key;
@@ -83,29 +83,37 @@ impl<'a> GameRenderer<'a> {
 
     pub fn evaluate_intent(&mut self, intent: &Intent) {
         match intent {
-            Intent::Move(Some(a), maybe_b) => {
+            Intent::Move(Some(from), maybe_to) => {
                 self.clear_highlight();
-
-                if let Some(coord_a) = a.to_complete() {
-                    let highlight = if self.board.can_move_from(&coord_a) {
-                        BoardHighlight::Primary
-                    } else {
-                        self.set_output_text(FORMAT_OUTPUT_ERROR_MOVE_A!(coord_a.to_field_name()));
-                        BoardHighlight::Error
-                    };
-
-                    self.highlighted_cells[coord_a.y as usize][coord_a.x as usize] = highlight;
-                }
-
-                if let Some(b) = maybe_b {
-                    if let Some(coord_b) = b.to_complete() {
-                        // TODO: check if move is valid
-                        self.highlighted_cells[coord_b.y as usize][coord_b.x as usize] = BoardHighlight::Secondary;
-                        self.set_output_text(OUTPUT_ENTER_MOVE.to_string());
-                    }
-                }
+                self.highlight_move(&from, &maybe_to)
             },
             _ => (),
+        }
+    }
+
+    fn highlight_move(&mut self, from: &PartialCoordinate, maybe_to: &Option<PartialCoordinate>) {
+        if let Some(coord_from) = from.to_complete() {
+            if self.board.can_move_from(&coord_from) {
+                self.highlighted_cells[coord_from.y as usize][coord_from.x as usize] = BoardHighlight::Primary;
+
+                if let Some(to) = maybe_to {
+                    if let Some(coord_to) = to.to_complete() {
+                        if self.board.can_move(&coord_from, &coord_to) {
+                            self.highlighted_cells[coord_to.y as usize][coord_to.x as usize] = BoardHighlight::Secondary;
+                            self.set_output_text(OUTPUT_ENTER_MOVE.to_string());
+                        } else {
+                            self.highlighted_cells[coord_to.y as usize][coord_to.x as usize] = BoardHighlight::Error;
+                            self.set_output_text(FORMAT_OUTPUT_ERROR_MOVE_FULL!(
+                                coord_from.to_field_name(),
+                                coord_to.to_field_name()
+                            ));
+                        }
+                    }
+                }
+            } else {
+                self.set_output_text(FORMAT_OUTPUT_ERROR_MOVE_FROM!(coord_from.to_field_name()));
+                self.highlighted_cells[coord_from.y as usize][coord_from.x as usize] = BoardHighlight::Error;
+            }
         }
     }
 
