@@ -113,8 +113,13 @@ impl<'a> BoardRenderer<'a> {
 
     fn draw_prompt(&mut self, offset_x: u16, offset_y: u16, line: &String, intent: &Intent) {
         let formatted_line = self.format_prompt(&line, &intent);
+        let turn = match self.board.turn {
+            Player::White => "White",
+            Player::Black => "Black",
+        };
+
         self.terminal.move_cursor(offset_x, offset_y);
-        write!(self.terminal.screen, "> {}", formatted_line).unwrap();
+        write!(self.terminal.screen, "{}> {}", turn, formatted_line).unwrap();
     }
 
     fn format_prompt(&self, line: &String, intent: &Intent) -> String {
@@ -176,6 +181,7 @@ impl<'a> BoardRenderer<'a> {
 
     fn on_prompt_enter(&mut self) {
         self.prompt.clear();
+        self.clear_highlight();
         // TODO
     }
 
