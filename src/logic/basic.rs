@@ -1,19 +1,36 @@
 use crate::draw::text::{LABEL_WHITE, LABEL_BLACK};
-use crate::logic::board::BOARD_SIZE;
+use crate::logic::board::{BOARD_SIZE, BOARD_MAX_AXIS};
+use crate::utils::ValueError;
 
 use std::fmt;
 
 
 pub struct Coordinate {
-    pub x: u16,
-    pub y: u16,
+    x: usize,
+    y: usize,
 }
 
 
 impl Coordinate {
+    pub fn new(x: usize, y: usize) -> Result<Self, ValueError> {
+        Ok(Self {
+            x: Self::try_axis_bound(x)?,
+            y: Self::try_axis_bound(y)?,
+        })
+    }
+
+    pub fn try_axis_bound(val: usize) -> Result<usize, ValueError> {
+        match val {
+            x @ 0..=BOARD_MAX_AXIS => Ok(val),
+            _ => Err(ValueError),
+        }
+    }
+
+    pub fn xv(&self) -> usize { self.x }
+    pub fn yv(&self) -> usize { self.y }
+
     pub fn to_field_name(&self) -> String {
-        // TODO: Make this safe
-        let column = (self.x + ('A' as u16)) as u8 as char;
+        let column = (self.x + ('A' as usize)) as u8 as char;
         format!("{}{}", column, BOARD_SIZE - self.y)
     }
 }

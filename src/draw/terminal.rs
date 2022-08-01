@@ -45,11 +45,14 @@ impl Terminal {
         self.screen.flush().unwrap();
     }
 
-    pub fn move_cursor(&mut self, x: u16, y: u16) {
+    pub fn move_cursor(&mut self, x: usize, y: usize) {
         write!(
             self.screen,
             "{}",
-            termion::cursor::Goto(x.saturating_add(1), y.saturating_add(1))
+            termion::cursor::Goto(
+                x.saturating_add(1).try_into().unwrap(),
+                y.saturating_add(1).try_into().unwrap(),
+            ),
         ).unwrap();
     }
 

@@ -6,15 +6,25 @@ use std::str::Chars;
 
 
 pub struct PartialCoordinate {
-    pub x: Option<u16>,
-    pub y: Option<u16>,
+    x: Option<usize>,
+    y: Option<usize>,
 }
 
 
 impl PartialCoordinate {
+    pub fn new(xo: Option<usize>, yo: Option<usize>) -> Result<Self, ValueError> {
+        Ok(Self {
+            x: xo.map(|v| Coordinate::try_axis_bound(v)).transpose()?,
+            y: yo.map(|v| Coordinate::try_axis_bound(v)).transpose()?,
+        })
+    }
+
+    pub fn xv(&self) -> Option<usize> { self.x }
+    pub fn yv(&self) -> Option<usize> { self.y }
+
     pub fn to_complete(& self) -> Option<Coordinate> {
         match (self.x, self.y) {
-            (Some(actual_x), Some(actual_y)) => Some(Coordinate { x: actual_x, y: actual_y }),
+            (Some(actual_x), Some(actual_y)) => Some(Coordinate::new(actual_x, actual_y).unwrap()),
             _ => None
         }
     }
@@ -106,17 +116,17 @@ fn prefixes_from_chars(chars: &mut Chars, target_str: &str) -> bool {
 }
 
 
-fn char_to_column(letter: char) -> Result<u16, ValueError> {
+fn char_to_column(letter: char) -> Result<usize, ValueError> {
     match letter {
-        c @ 'A'..='H' => Ok(c as u16 - 'A' as u16),
+        c @ 'A'..='H' => Ok(c as usize - 'A' as usize),
         _ => Err(ValueError),
     }
 }
 
 
-fn char_to_row(letter: char) -> Result<u16, ValueError> {
+fn char_to_row(letter: char) -> Result<usize, ValueError> {
     match letter {
-        c @ '1'..='8' => Ok(BOARD_SIZE - 1 - (c as u16 - '1' as u16)),
+        c @ '1'..='8' => Ok(BOARD_SIZE - 1 - (c as usize - '1' as usize)),
         _ => Err(ValueError),
     }
 }

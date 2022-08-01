@@ -3,8 +3,8 @@ use crate::logic::basic::{Coordinate, Player};
 use crate::utils::DiscreetUnwrap;
 
 
-pub const BOARD_SIZE: u16 = 8;
-pub const BOARD_SIZE_USIZE: usize = 8;
+pub const BOARD_SIZE: usize = 8;
+pub const BOARD_MAX_AXIS: usize = BOARD_SIZE - 1;
 
 
 pub enum TileContent {
@@ -56,7 +56,7 @@ pub struct FieldName {
 
 
 pub struct Board {
-    pub tiles: [[TileContent; BOARD_SIZE_USIZE]; BOARD_SIZE_USIZE],
+    pub tiles: [[TileContent; BOARD_SIZE]; BOARD_SIZE],
     pub turn: Player,
 }
 
@@ -86,8 +86,7 @@ impl Board {
     }
 
     pub fn get_tile(& self, coordinate: &Coordinate) -> &TileContent {
-        self.assert_coordinate(coordinate);
-        &self.tiles[coordinate.y as usize][coordinate.x as usize]
+        &self.tiles[coordinate.yv()][coordinate.xv()]
     }
 
     pub fn can_move_from(& self, coordinate: &Coordinate) -> bool {
@@ -116,10 +115,8 @@ impl Board {
 
     pub fn coordinate_to_fieldname(& self, coordinate: &Coordinate) -> FieldName {
         // TODO: Refactor this
-        self.assert_coordinate(coordinate);
-
-        let hpos = coordinate.x;
-        let vpos = BOARD_SIZE - coordinate.y - 1;
+        let hpos = coordinate.xv();
+        let vpos = BOARD_SIZE - coordinate.yv() - 1;
 
         FieldName {
             horizontal: offset_char('A', hpos.try_into().unwrap()).to_string(),
@@ -128,18 +125,10 @@ impl Board {
     }
 
     pub fn get_field_color_at(& self, coordinate: &Coordinate) -> FieldColor {
-        self.assert_coordinate(coordinate);
-
-        match (coordinate.x + coordinate.y) % 2 {
+        match (coordinate.xv() + coordinate.xv()) % 2 {
             0 => FieldColor::White,
             1 => FieldColor::Black,
             _ => panic!("Unreachable"),
-        }
-    }
-
-    fn assert_coordinate(& self, coordinate: &Coordinate) {
-        if coordinate.x > BOARD_SIZE || coordinate.y > BOARD_SIZE {
-            panic!("Coordinate out of bound: {}", coordinate);
         }
     }
 }
@@ -153,7 +142,7 @@ fn offset_char(c: char, n: i8) -> char {
 }
 
 
-const DEFAULT_PIECE_CONFIGURATION: [[char; BOARD_SIZE_USIZE]; BOARD_SIZE_USIZE] = [
+const DEFAULT_PIECE_CONFIGURATION: [[char; BOARD_SIZE]; BOARD_SIZE] = [
     ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
     ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
     [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
