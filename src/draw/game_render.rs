@@ -235,7 +235,7 @@ impl<'a> GameRenderer<'a> {
 
             for x in 0..BOARD_SIZE {
                 let pos_x = x * self.field_size * self.horizontal_scale + h_center + offset_x + 2;
-                let coord = Coordinate::new(x, y * BOARD_MAX_AXIS).unwrap();
+                let coord = Coordinate::try_new(x, y * BOARD_MAX_AXIS).unwrap();
                 let label = self.board.coordinate_to_fieldname(&coord).horizontal;
 
                 self.terminal.move_cursor(pos_x, pos_y);
@@ -249,7 +249,7 @@ impl<'a> GameRenderer<'a> {
 
             for y in 0..BOARD_SIZE {
                 let pos_y = y * self.field_size + v_center + offset_y + 1;
-                let coord = Coordinate::new(x * BOARD_MAX_AXIS, y).unwrap();
+                let coord = Coordinate::try_new(x * BOARD_MAX_AXIS, y).unwrap();
                 let label = self.board.coordinate_to_fieldname(&coord).vertical;
 
                 self.terminal.move_cursor(pos_x, pos_y);
@@ -292,7 +292,7 @@ impl<'a> GameRenderer<'a> {
 
                 // Background
                 if x < BOARD_SIZE && y < BOARD_SIZE {
-                    let background_color = self.get_background_color_at(&Coordinate::new(x, y).unwrap());
+                    let background_color = self.get_background_color_at(&Coordinate::try_new(x, y).unwrap());
                     let board_highlight = &self.highlighted_cells[y as usize][x as usize];
                     let is_highlighted = match board_highlight {
                         BoardHighlight::None => false,
@@ -335,7 +335,7 @@ impl<'a> GameRenderer<'a> {
             for x in 0..BOARD_SIZE {
                 let pos_x = x * self.field_size * self.horizontal_scale + offset_x;
 
-                let coordinate = Coordinate::new(x, y).unwrap();
+                let coordinate = Coordinate::try_new(x, y).unwrap();
                 let tile = self.board.get_tile(&coordinate);
 
                 if let TileContent::Piece(piece) = tile {

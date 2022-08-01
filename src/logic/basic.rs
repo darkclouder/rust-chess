@@ -12,7 +12,7 @@ pub struct Coordinate {
 
 
 impl Coordinate {
-    pub fn new(x: usize, y: usize) -> Result<Self, ValueError> {
+    pub fn try_new(x: usize, y: usize) -> Result<Self, ValueError> {
         Ok(Self {
             x: Self::try_axis_bound(x)?,
             y: Self::try_axis_bound(y)?,

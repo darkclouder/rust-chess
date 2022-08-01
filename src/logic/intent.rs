@@ -12,7 +12,7 @@ pub struct PartialCoordinate {
 
 
 impl PartialCoordinate {
-    pub fn new(xo: Option<usize>, yo: Option<usize>) -> Result<Self, ValueError> {
+    pub fn try_new(xo: Option<usize>, yo: Option<usize>) -> Result<Self, ValueError> {
         Ok(Self {
             x: xo.map(|v| Coordinate::try_axis_bound(v)).transpose()?,
             y: yo.map(|v| Coordinate::try_axis_bound(v)).transpose()?,
@@ -24,7 +24,7 @@ impl PartialCoordinate {
 
     pub fn to_complete(& self) -> Option<Coordinate> {
         match (self.x, self.y) {
-            (Some(actual_x), Some(actual_y)) => Some(Coordinate::new(actual_x, actual_y).unwrap()),
+            (Some(actual_x), Some(actual_y)) => Some(Coordinate::try_new(actual_x, actual_y).unwrap()),
             _ => None
         }
     }
@@ -99,7 +99,7 @@ fn coordinate_from_chars(chars: &mut Chars) -> Result<Option<PartialCoordinate>,
 
     match (column, row) {
         (None, None) => Ok(None),
-        (c, r) => Ok(Some(PartialCoordinate { x: c, y: r })),
+        (c, r) => Some(PartialCoordinate::try_new(c, r)).transpose(),
     }
 }
 
