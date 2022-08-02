@@ -1,58 +1,10 @@
-use crate::logic::piece::{self, Piece, PieceType};
 use crate::logic::basic::{Coordinate, Player};
+use crate::logic::piece::{self, Piece, PieceType};
 use crate::utils::DiscreetUnwrap;
 
 
 pub const BOARD_SIZE: usize = 8;
 pub const BOARD_MAX_AXIS: usize = BOARD_SIZE - 1;
-
-
-pub enum TileContent {
-    Empty,
-    Piece(Piece),
-}
-
-
-impl TileContent {
-    pub fn from_letter(letter: char) -> Self {
-        if letter == ' ' {
-            return Self::Empty
-        }
-
-        let player = match letter {
-            'A'..='Z' => Player::White,
-            'a'..='z' => Player::Black,
-            _ => panic!("Invalid letter group"),
-        };
-        
-        let upper_letter = letter.to_ascii_uppercase();
-
-        let piece_type: Box<dyn PieceType> = match upper_letter {
-            'K' => Box::new(piece::King::new()),
-            'Q' => Box::new(piece::Queen::new()),
-            'R' => Box::new(piece::Rook::new()),
-            'B' => Box::new(piece::Bishop::new()),
-            'N' => Box::new(piece::Knight::new()),
-            'P' => Box::new(piece::Pawn::new()),
-            _ => panic!("Invalid letter"),
-        };
-
-        Self::Piece(Piece { piece_type,  player, })
-    }
-}
-
-
-pub enum FieldColor {
-    White,
-    Black,
-}
-
-
-// TODO: refactor this
-pub struct FieldName {
-    pub horizontal: String,
-    pub vertical: String,
-}
 
 
 pub struct Board {
@@ -88,57 +40,41 @@ impl Board {
     pub fn get_tile(& self, coordinate: &Coordinate) -> &TileContent {
         &self.tiles[coordinate.yv()][coordinate.xv()]
     }
-
-    pub fn can_move_from(& self, coordinate: &Coordinate) -> bool {
-        let tile = self.get_tile(coordinate);
-        
-        match tile {
-            TileContent::Empty => false,
-            TileContent::Piece(piece) => piece.player == self.turn,
-        }
-    }
-
-    pub fn can_move(& self, from: &Coordinate, to: &Coordinate) -> bool {
-        let tile = self.get_tile(&from);
-        
-        match tile {
-            TileContent::Empty => false,
-            TileContent::Piece(piece) => {
-                if piece.player == self.turn {
-                    piece.can_move(self, from, to)
-                } else {
-                    false
-                }
-            },
-        }
-    }
-
-    pub fn coordinate_to_fieldname(& self, coordinate: &Coordinate) -> FieldName {
-        // TODO: Refactor this
-        let hpos = coordinate.xv();
-        let vpos = BOARD_SIZE - coordinate.yv() - 1;
-
-        FieldName {
-            horizontal: offset_char('A', hpos.try_into().unwrap()).to_string(),
-            vertical:  offset_char('1', vpos.try_into().unwrap()).to_string(),
-        }
-    }
-
-    pub fn get_field_color_at(& self, coordinate: &Coordinate) -> FieldColor {
-        match (coordinate.xv() + coordinate.xv()) % 2 {
-            0 => FieldColor::White,
-            1 => FieldColor::Black,
-            _ => panic!("Unreachable"),
-        }
-    }
 }
 
 
-fn offset_char(c: char, n: i8) -> char {
-    assert!(c.is_ascii_alphanumeric());
-    let ret = ((c as i8) + n) as u8 as char;
-    assert!(ret.is_ascii_alphanumeric());
-    ret
+pub enum TileContent {
+    Empty,
+    Piece(Piece),
+}
+
+
+impl TileContent {
+    pub fn from_letter(letter: char) -> Self {
+        if letter == ' ' {
+            return Self::Empty
+        }
+
+        let player = match letter {
+            'A'..='Z' => Player::White,
+            'a'..='z' => Player::Black,
+            _ => panic!("Invalid letter group"),
+        };
+        
+        let upper_letter = letter.to_ascii_uppercase();
+
+        let piece_type: Box<dyn PieceType> = match upper_letter {
+            'K' => Box::new(piece::King::new()),
+            'Q' => Box::new(piece::Queen::new()),
+            'R' => Box::new(piece::Rook::new()),
+            'B' => Box::new(piece::Bishop::new()),
+            'N' => Box::new(piece::Knight::new()),
+            'P' => Box::new(piece::Pawn::new()),
+            _ => panic!("Invalid letter"),
+        };
+
+        Self::Piece(Piece { piece_type,  player, })
+    }
 }
 
 

@@ -2,8 +2,15 @@ use crate::{FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_ERROR_MOVE_FROM, FORMAT_OUTPUT_ERR
 use crate::draw::text::OUTPUT_ENTER_MOVE;
 use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
-use crate::logic::basic::{Coordinate, Player};
-use crate::logic::board::{Board, FieldColor, TileContent, BOARD_SIZE, BOARD_MAX_AXIS};
+use crate::logic::game::Game;
+use crate::logic::basic::{
+    FieldColor,
+    Player,
+    Coordinate,
+    row_to_name,
+    column_to_name,
+};
+use crate::logic::board::{TileContent, BOARD_SIZE, BOARD_MAX_AXIS};
 use crate::logic::intent::{Intent, PartialCoordinate};
 
 use termion::color;
@@ -42,7 +49,7 @@ impl BoardHighlight {
 
 
 pub struct GameRenderer<'a> {
-    board: &'a Board,
+    game: &'a Game,
     terminal: Terminal,
     prompt: Prompt,
     field_size: usize,
@@ -53,9 +60,9 @@ pub struct GameRenderer<'a> {
 
 
 impl<'a> GameRenderer<'a> {
-    pub fn new(board: &'a Board) -> Self {
+    pub fn new(game: &'a Game) -> Self {
         Self {
-            board,
+            game,
             terminal: Terminal::default(),
             prompt: Prompt::default(),
             field_size: 4,
@@ -91,12 +98,12 @@ impl<'a> GameRenderer<'a> {
 
     fn highlight_move(&mut self, from: &PartialCoordinate, maybe_to: &Option<PartialCoordinate>) {
         if let Some(coord_from) = from.to_complete() {
-            if self.board.can_move_from(&coord_from) {
+            if self.game.can_move_from(&coord_from) {
                 self.highlighted_cells[coord_from.yv()][coord_from.xv()] = BoardHighlight::Primary;
 
                 if let Some(to) = maybe_to {
                     if let Some(coord_to) = to.to_complete() {
-                        if self.board.can_move(&coord_from, &coord_to) {
+                        if self.game.can_move(&coord_from, &coord_to) {
                             self.highlighted_cells[coord_to.yv()][coord_to.xv()] = BoardHighlight::Secondary;
                             self.set_output_text(OUTPUT_ENTER_MOVE.to_string());
                         } else {
@@ -125,7 +132,7 @@ impl<'a> GameRenderer<'a> {
 
     fn draw_prompt(&mut self, offset_x: usize, offset_y: usize, line: &String, intent: &Intent) {
         let formatted_line = self.format_prompt(&line, &intent);
-        let turn = self.board.turn.to_label();
+        let turn = self.game.board.turn.to_label();
 
         self.terminal.move_cursor(offset_x, offset_y);
         write!(self.terminal.screen, "{}> {}", turn, formatted_line).unwrap();
@@ -141,7 +148,7 @@ impl<'a> GameRenderer<'a> {
             ),
             Intent::Move(Some(a), maybe_b) => {
                 if let Some(coord_a) = a.to_complete() {
-                    let highlight = if self.board.can_move_from(&coord_a) {
+                    let highlight = if self.game.can_move_from(&coord_a) {
                         BoardHighlight::Primary
                     } else {
                         BoardHighlight::Error
@@ -204,7 +211,7 @@ impl<'a> GameRenderer<'a> {
         let line = self.prompt.get_line();
         let intent = Intent::from_partial_command(&line);
 
-        self.set_output_text(FORMAT_OUTPUT_TURN!(self.board.turn.to_label()));
+        self.set_output_text(FORMAT_OUTPUT_TURN!(self.game.board.turn.to_label()));
         self.evaluate_intent(&intent);
 
         self.terminal.clear_screen();
@@ -236,7 +243,7 @@ impl<'a> GameRenderer<'a> {
             for x in 0..BOARD_SIZE {
                 let pos_x = x * self.field_size * self.horizontal_scale + h_center + offset_x + 2;
                 let coord = Coordinate::try_new(x, y * BOARD_MAX_AXIS).unwrap();
-                let label = self.board.coordinate_to_fieldname(&coord).horizontal;
+                let label = column_to_name(coord.xv());
 
                 self.terminal.move_cursor(pos_x, pos_y);
                 write!(self.terminal.screen, "{}", label).unwrap();
@@ -250,7 +257,7 @@ impl<'a> GameRenderer<'a> {
             for y in 0..BOARD_SIZE {
                 let pos_y = y * self.field_size + v_center + offset_y + 1;
                 let coord = Coordinate::try_new(x * BOARD_MAX_AXIS, y).unwrap();
-                let label = self.board.coordinate_to_fieldname(&coord).vertical;
+                let label = row_to_name(coord.yv());
 
                 self.terminal.move_cursor(pos_x, pos_y);
                 write!(self.terminal.screen, "{}", label).unwrap();
@@ -336,7 +343,7 @@ impl<'a> GameRenderer<'a> {
                 let pos_x = x * self.field_size * self.horizontal_scale + offset_x;
 
                 let coordinate = Coordinate::try_new(x, y).unwrap();
-                let tile = self.board.get_tile(&coordinate);
+                let tile = self.game.board.get_tile(&coordinate);
 
                 if let TileContent::Piece(piece) = tile {
                     let symbol = piece.get_symbol();
@@ -362,9 +369,7 @@ impl<'a> GameRenderer<'a> {
     }
 
     fn get_background_color_at(& self, coordinate: &Coordinate) -> String {
-        let field_color = self.board.get_field_color_at(&coordinate);
-
-        match field_color {
+        match coordinate.get_field_color() {
             FieldColor::White => color::Bg(color::White).to_string(),
             FieldColor::Black => color::Bg(color::Black).to_string(),
         }

@@ -2,12 +2,12 @@ pub mod logic;
 pub mod draw;
 pub mod utils;
 
-use logic::board::Board;
-use draw::game_render::GameRenderer;
+use crate::logic::game::Game;
+use crate::draw::game_render::GameRenderer;
 
 
 fn main() {
-    let board = Board::default();
-    let mut renderer = GameRenderer::new(&board);
+    let game = Game::default();
+    let mut renderer = GameRenderer::new(&game);
     renderer.run();
 }
