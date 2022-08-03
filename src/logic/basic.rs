@@ -11,7 +11,7 @@ pub enum FieldColor {
 }
 
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Player {
     White,
     Black,

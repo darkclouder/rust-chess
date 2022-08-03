@@ -1,5 +1,5 @@
+use crate::logic::pieces::Piece;
 use crate::logic::basic::{Coordinate, Player};
-use crate::logic::piece::{self, Piece, PieceType};
 use crate::utils::DiscreetUnwrap;
 
 
@@ -7,6 +7,7 @@ pub const BOARD_SIZE: usize = 8;
 pub const BOARD_MAX_AXIS: usize = BOARD_SIZE - 1;
 
 
+#[derive(Clone)]
 pub struct Board {
     pub tiles: [[TileContent; BOARD_SIZE]; BOARD_SIZE],
     pub turn: Player,
@@ -37,12 +38,13 @@ impl Board {
         }
     }
 
-    pub fn get_tile(& self, coordinate: &Coordinate) -> &TileContent {
+    pub fn get_tile(&self, coordinate: &Coordinate) -> &TileContent {
         &self.tiles[coordinate.yv()][coordinate.xv()]
     }
 }
 
 
+#[derive(Clone)]
 pub enum TileContent {
     Empty,
     Piece(Piece),
@@ -55,25 +57,7 @@ impl TileContent {
             return Self::Empty
         }
 
-        let player = match letter {
-            'A'..='Z' => Player::White,
-            'a'..='z' => Player::Black,
-            _ => panic!("Invalid letter group"),
-        };
-        
-        let upper_letter = letter.to_ascii_uppercase();
-
-        let piece_type: Box<dyn PieceType> = match upper_letter {
-            'K' => Box::new(piece::King::new()),
-            'Q' => Box::new(piece::Queen::new()),
-            'R' => Box::new(piece::Rook::new()),
-            'B' => Box::new(piece::Bishop::new()),
-            'N' => Box::new(piece::Knight::new()),
-            'P' => Box::new(piece::Pawn::new()),
-            _ => panic!("Invalid letter"),
-        };
-
-        Self::Piece(Piece { piece_type,  player, })
+        Self::Piece(Piece::from_letter(letter).unwrap())
     }
 }
 

@@ -30,7 +30,8 @@ impl Game {
             TileContent::Empty => false,
             TileContent::Piece(piece) => {
                 if piece.player == self.board.turn {
-                    piece.can_move(&self.board, from, to)
+                    false
+                    //piece.can_move(&self.board, from, to) TODO
                 } else {
                     false
                 }
