@@ -7,7 +7,7 @@ use crate::draw::game_render::GameRenderer;
 
 
 fn main() {
-    let game = Game::default();
-    let mut renderer = GameRenderer::new(&game);
+    let mut game = Game::default();
+    let mut renderer = GameRenderer::new(&mut game);
     renderer.run();
 }

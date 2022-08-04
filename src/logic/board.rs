@@ -1,3 +1,5 @@
+use std::mem;
+
 use crate::logic::pieces::Piece;
 use crate::logic::basic::{Coordinate, Player};
 use crate::utils::DiscreetUnwrap;
@@ -11,6 +13,7 @@ pub const BOARD_MAX_AXIS: usize = BOARD_SIZE - 1;
 pub struct Board {
     pub tiles: [[TileContent; BOARD_SIZE]; BOARD_SIZE],
     pub turn: Player,
+    pub en_passant: Option<Coordinate>,
 }
 
 
@@ -35,11 +38,34 @@ impl Board {
         Self {
             tiles,
             turn: Player::White,
+            en_passant: None,
         }
+    }
+
+    pub fn turned(&self) -> Self {
+        let mut new_board = self.clone();
+        new_board.turn = match self.turn {
+            Player::White => Player::Black,
+            Player::Black => Player::White,
+        };
+        new_board.en_passant = None;
+        new_board
     }
 
     pub fn get_tile(&self, coordinate: &Coordinate) -> &TileContent {
         &self.tiles[coordinate.yv()][coordinate.xv()]
+    }
+
+    pub fn move_tile(&mut self, from: &Coordinate, to: &Coordinate) {
+        let from_tile = mem::replace(
+            &mut self.tiles[from.yv()][from.xv()],
+            TileContent::Empty,
+        );
+        self.tiles[to.yv()][to.xv()] = from_tile;
+    }
+
+    pub fn clear_tile(&mut self, coordinate: &Coordinate) {
+        self.tiles[coordinate.yv()][coordinate.xv()] = TileContent::Empty;
     }
 }
 

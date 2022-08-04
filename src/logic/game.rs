@@ -1,6 +1,8 @@
 use crate::logic::basic::{Coordinate};
 use crate::logic::board::{Board, TileContent};
 
+use super::pieces::MoveError;
+
 
 pub struct Game {
     pub board: Board,
@@ -27,15 +29,20 @@ impl Game {
         let tile = self.board.get_tile(&from);
         
         match tile {
+            TileContent::Piece(piece) => piece.can_move(&self.board, from, to),
             TileContent::Empty => false,
-            TileContent::Piece(piece) => {
-                if piece.player == self.board.turn {
-                    false
-                    //piece.can_move(&self.board, from, to) TODO
-                } else {
-                    false
-                }
-            },
         }
+    }
+
+    pub fn move_piece(&mut self, from: &Coordinate, to: &Coordinate) -> Result<(), MoveError> {
+        let tile = self.board.get_tile(&from);
+
+        let new_board = match tile {
+            TileContent::Piece(piece) => piece.move_piece(&self.board, from, to),
+            TileContent::Empty => Err(MoveError),
+        };
+
+        self.board = new_board?;
+        Ok(())
     }
 }

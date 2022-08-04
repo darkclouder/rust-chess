@@ -49,7 +49,7 @@ impl BoardHighlight {
 
 
 pub struct GameRenderer<'a> {
-    game: &'a Game,
+    game: &'a mut Game,
     terminal: Terminal,
     prompt: Prompt,
     field_size: usize,
@@ -60,7 +60,7 @@ pub struct GameRenderer<'a> {
 
 
 impl<'a> GameRenderer<'a> {
-    pub fn new(game: &'a Game) -> Self {
+    pub fn new(game: &'a mut Game) -> Self {
         Self {
             game,
             terminal: Terminal::default(),
@@ -89,7 +89,6 @@ impl<'a> GameRenderer<'a> {
     pub fn evaluate_intent(&mut self, intent: &Intent) {
         match intent {
             Intent::Move(Some(from), maybe_to) => {
-                self.clear_highlight();
                 self.highlight_move(&from, &maybe_to)
             },
             _ => (),
@@ -196,9 +195,40 @@ impl<'a> GameRenderer<'a> {
     }
 
     fn on_prompt_enter(&mut self) {
+        let line = self.prompt.get_line();
         self.prompt.clear();
-        self.clear_highlight();
-        // TODO
+
+        if line.is_empty() {
+            self.set_output_text("".to_string());
+            return;
+        }
+
+        let intent = Intent::from_partial_command(&line);
+
+        self.execute_intent(&intent)
+            .unwrap_or_else(
+                |m| self.set_output_text(m)
+            );
+    }
+
+    pub fn execute_intent(&mut self, intent: &Intent) -> Result<(), String> {
+        match intent {
+            Intent::Move(Some(a), Some(b)) => {
+                if let (Some(from), Some(to)) = (a.to_complete(), b.to_complete()) {
+                    self.game.move_piece(&from, &to)
+                        .map_or_else(
+                            |_| Err("Invalid move".to_string()),
+                            |_| {
+                                self.set_output_text("".to_string());
+                                Ok(())
+                            },
+                        )
+                } else {
+                    Err("Incomplete command".to_string())
+                }
+            },
+            _ => Err("Invalid command".to_string()),
+        }
     }
 
     fn on_prompt_tab(&self) {
@@ -211,7 +241,11 @@ impl<'a> GameRenderer<'a> {
         let line = self.prompt.get_line();
         let intent = Intent::from_partial_command(&line);
 
-        self.set_output_text(FORMAT_OUTPUT_TURN!(self.game.board.turn.to_label()));
+        if self.output_text.is_empty() {
+            self.set_output_text(FORMAT_OUTPUT_TURN!(self.game.board.turn.to_label()));
+        }
+
+        self.clear_highlight();
         self.evaluate_intent(&intent);
 
         self.terminal.clear_screen();
