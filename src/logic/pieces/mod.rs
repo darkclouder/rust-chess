@@ -130,3 +130,117 @@ impl fmt::Display for MoveError {
         write!(f, "MoveError")
     }
 }
+
+
+mod tests {
+    use std::fmt::Debug;
+
+    use crate::logic::basic::Coordinate;
+    use crate::logic::board::{Board, BOARD_SIZE};
+
+    use super::MoveError;
+
+    type MovePieceFn = fn(&Board, &Coordinate, &Coordinate) -> Result<Board, MoveError>;
+    type AllMovesFn = fn(&Board, &Coordinate) -> Vec<Coordinate>;
+
+    pub fn assert_vecs_same_elements<T, F, K>(actual: &mut Vec<T>, expected: &mut Vec<T>, keyf: &F)
+    where
+        T: Clone + Debug + PartialEq,
+        F: Fn(&T) -> K,
+        K: Ord,
+    {
+        assert!(actual.len() == expected.len());
+        let mut actual_sorted = actual.clone();
+        actual_sorted.sort_by_key(keyf);
+        let mut expected_sorted = expected.clone();
+        expected_sorted.sort_by_key(keyf);
+
+        for (actual_item, expected_item) in actual_sorted.iter().zip(expected_sorted.iter()) {
+            assert_eq!(*actual_item, *expected_item);
+        }
+    }
+
+    pub fn assert_all_moves_valid(
+        board: &Board,
+        move_piece: MovePieceFn,
+        all_moves: AllMovesFn,
+    ) {
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                let from = c(x, y);
+                assert_all_moves_valid_from(
+                    &board,
+                    &from,
+                    &all_moves(&board, &from),
+                    move_piece,
+                );
+            }
+        }
+    }
+
+    fn assert_all_moves_valid_from(
+        board: &Board,
+        from: &Coordinate,
+        moves: &Vec<Coordinate>,
+        move_piece: MovePieceFn
+    ) {
+        for to in moves {
+            match move_piece(board, from, to) {
+                Err(e) => assert!(
+                    false,
+                    "Could not move from {} to {} as {:?}: {}",
+                    from, to, board.turn, e
+                ),
+                Ok(_) => (),
+            };
+        }
+    }
+
+
+    pub fn assert_valid_in_all_moves(
+        board: &Board,
+        move_piece: MovePieceFn,
+        all_moves: AllMovesFn
+    ) {
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                assert_valid_in_all_moves_from(
+                    &board,
+                    &c(x,y),
+                    move_piece,
+                    all_moves,
+                );
+            }
+        }
+    }
+
+
+    fn assert_valid_in_all_moves_from(
+        board: &Board,
+        from: &Coordinate,
+        move_piece: MovePieceFn,
+        all_moves: AllMovesFn
+    ) {
+        let mut valid_moves: Vec<Coordinate> = Vec::new();
+
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                let to = c(x, y);
+                match move_piece(board, from, &to) {
+                    Ok(_) => valid_moves.push(to),
+                    Err(_) => (),
+                };
+            }
+        }
+
+        assert_vecs_same_elements(
+            &mut valid_moves, 
+            &mut all_moves(board, from),
+            &|c: &Coordinate| (c.xv(), c.yv()),
+        )
+    }
+
+    pub fn c(x: usize, y: usize) -> Coordinate {
+        Coordinate::try_new(x, y).unwrap()
+    }
+}

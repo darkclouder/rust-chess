@@ -176,10 +176,8 @@ fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> b
 
 #[cfg(test)]
 mod tests {
-    use std::fmt::Debug;
-
-    use crate::logic::basic::Coordinate;
-    use crate::logic::board::{Board, BOARD_SIZE};
+    use crate::logic::board::Board;
+    use crate::logic::pieces::tests::{c, assert_all_moves_valid, assert_valid_in_all_moves};
 
     use super::{move_piece, all_moves};
 
@@ -198,100 +196,26 @@ mod tests {
     }
 
 
-    fn assert_all_moves_valid(board: &Board, from: &Coordinate, moves: &Vec<Coordinate>) {
-        for to in moves {
-            match move_piece(board, from, to) {
-                Err(e) => assert!(
-                    false,
-                    "Could not move from {} to {} as {:?}: {}",
-                    from, to, board.turn, e
-                ),
-                Ok(_) => (),
-            };
-        }
-    }
-
-
-    fn assert_valid_in_all_moves(board: &Board, from: &Coordinate) {
-        let mut valid_moves: Vec<Coordinate> = Vec::new();
-
-        for x in 0..BOARD_SIZE {
-            for y in 0..BOARD_SIZE {
-                let to = c(x, y);
-                match move_piece(board, from, &to) {
-                    Ok(_) => valid_moves.push(to),
-                    Err(_) => (),
-                };
-            }
-        }
-
-        assert_vecs_same_elements(
-            &mut valid_moves, 
-            &mut all_moves(board, from),
-            &|c: &Coordinate| (c.xv(), c.yv()),
-        )
-    }
-
-
-    fn assert_vecs_same_elements<T, F, K>(actual: &mut Vec<T>, expected: &mut Vec<T>, keyf: &F)
-    where
-        T: Clone + Debug + PartialEq,
-        F: Fn(&T) -> K,
-        K: Ord,
-    {
-        assert!(actual.len() == expected.len());
-        let mut actual_sorted = actual.clone();
-        actual_sorted.sort_by_key(keyf);
-        let mut expected_sorted = expected.clone();
-        expected_sorted.sort_by_key(keyf);
-
-        for (actual_item, expected_item) in actual_sorted.iter().zip(expected_sorted.iter()) {
-            assert_eq!(*actual_item, *expected_item);
-        }
-    }
-
-
-    fn c(x: usize, y: usize) -> Coordinate {
-        Coordinate::try_new(x, y).unwrap()
-    }
-
-
     #[test]
     fn all_moves_are_valid() {
         let board = test_board();
-        for x in 0..BOARD_SIZE {
-            for y in 0..BOARD_SIZE {
-                let from = c(x, y);
-                assert_all_moves_valid(&board, &from, &all_moves(&board, &from));
-            }
-        }
+        assert_all_moves_valid(&board, move_piece, all_moves);
 
         let turned = board.turned();
-        for x in 0..BOARD_SIZE {
-            for y in 0..BOARD_SIZE {
-                let from = c(x, y);
-                assert_all_moves_valid(&turned, &from, &all_moves(&turned, &from));
-            }
-        }
+        assert_all_moves_valid(&turned, move_piece, all_moves);
     }
+
 
     #[test]
     fn all_valid_are_moves() {
         let board = test_board();
-        for x in 0..BOARD_SIZE {
-            for y in 0..BOARD_SIZE {
-                assert_valid_in_all_moves(&board, &c(x,y));
-            }
-        }
+        assert_valid_in_all_moves(&board, move_piece, all_moves);
 
         let turned = board.turned();
-        for x in 0..BOARD_SIZE {
-            for y in 0..BOARD_SIZE {
-                assert_valid_in_all_moves(&turned, &c(x,y));
-            }
-        }
+        assert_valid_in_all_moves(&turned, move_piece, all_moves);
     }
 
+    
     #[test]
     fn valid_regular_moves() {
         let board = test_board();
