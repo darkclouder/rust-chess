@@ -16,7 +16,7 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
             // - Double move
             if is_player_pawn_original_pos(board, from) {
                 if let Ok(to_double) = coordinate_up(&board.turn, from, 2) {
-                    if matches!(board.get_tile(&to), TileContent::Empty) {
+                    if matches!(board.get_tile(&to_double), TileContent::Empty) {
                         moves.push(to_double);
                     }
                 }
@@ -176,7 +176,7 @@ fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> b
 
 #[cfg(test)]
 mod tests {
-    use crate::logic::board::Board;
+    use crate::logic::board::{Board, TileContent};
     use crate::logic::pieces::tests::{c, assert_all_moves_valid, assert_valid_in_all_moves};
 
     use super::{move_piece, all_moves};
@@ -210,9 +210,19 @@ mod tests {
     fn all_valid_are_moves() {
         let board = test_board();
         assert_valid_in_all_moves(&board, move_piece, all_moves);
+        // En passant
+        {
+            let prepared = move_piece(&board, &c(6, 6), &c(6, 4)).unwrap();
+            assert_valid_in_all_moves(&prepared, move_piece, all_moves);
+        }
 
         let turned = board.turned();
         assert_valid_in_all_moves(&turned, move_piece, all_moves);
+        // En passant
+        {
+            let prepared = move_piece(&turned, &c(1, 1), &c(1, 3)).unwrap();
+            assert_valid_in_all_moves(&prepared, move_piece, all_moves);
+        }
     }
 
     
@@ -253,17 +263,40 @@ mod tests {
 
 
     #[test]
-    fn valid_regular_caputres() {
+    fn valid_regular_captures() {
         let board = test_board();
 
-        move_piece(&board, &c(6, 6), &c(7, 5)).unwrap();
+        let new_board = move_piece(&board, &c(6, 6), &c(7, 5)).unwrap();
+        assert!(matches!(new_board.get_tile(&c(6, 6)), TileContent::Empty));
+        assert_eq!(new_board.get_tile(&c(7, 5)), board.get_tile(&c(6, 6)));
+
         // Cannot throw own
         assert!(move_piece(&board, &c(2, 6), &c(3, 5)).is_err());
         // Cannot throw outside of diagonal
         assert!(move_piece(&board, &c(1, 1), &c(2, 4)).is_err());
     }
 
+    #[test]
+    fn valid_en_passants() {
+        let board = test_board();
+        {
+            let prepared = move_piece(&board, &c(6, 6), &c(6, 4)).unwrap();
+            assert!(!matches!(prepared.get_tile(&c(6, 4)), TileContent::Empty));
+            let new_board = move_piece(&prepared, &c(5, 4), &c(6, 5)).unwrap();
+            assert!(matches!(new_board.get_tile(&c(6, 4)), TileContent::Empty));
+        }
+        assert!(move_piece(&board, &c(0, 3), &c(1, 2)).is_err());
 
-    // TODO: En passant
+        let turned = board.turned();
+        {
+            let prepared = move_piece(&turned, &c(1, 1), &c(1, 3)).unwrap();
+            assert!(!matches!(prepared.get_tile(&c(1, 3)), TileContent::Empty));
+            let new_board = move_piece(&prepared, &c(0, 3), &c(1, 2)).unwrap();
+            assert!(matches!(new_board.get_tile(&c(1, 3)), TileContent::Empty));
+        }
+        assert!(move_piece(&turned, &c(5, 4), &c(6, 5)).is_err());
+    }
+
+
     // TODO: Promote
 }

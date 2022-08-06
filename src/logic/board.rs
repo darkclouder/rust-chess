@@ -74,7 +74,7 @@ impl Board {
 }
 
 
-#[derive(Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TileContent {
     Empty,
     Piece(Piece),

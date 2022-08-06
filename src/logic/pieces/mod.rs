@@ -9,7 +9,7 @@ use super::board::Board;
 use crate::utils::ValueError;
 
 
-#[derive(Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum PieceType {
     King,
     Queen,
@@ -69,7 +69,7 @@ impl PieceType {
 }
 
 
-#[derive(Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Piece {
     pub player: Player,
     pub piece_type: PieceType,
