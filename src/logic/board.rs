@@ -19,7 +19,11 @@ pub struct Board {
 
 impl Board {
     pub fn default() -> Self {
-        let tiles = DEFAULT_PIECE_CONFIGURATION
+        Self::from_configuration(DEFAULT_PIECE_CONFIGURATION)
+    }
+
+    pub fn from_configuration(configuration: [[char; BOARD_SIZE]; BOARD_SIZE]) -> Self {
+        let tiles = configuration
             .into_iter()
             .map(|row| {
                 row
