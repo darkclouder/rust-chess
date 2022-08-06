@@ -2,11 +2,36 @@ use crate::logic::basic::{Coordinate, Player};
 use crate::logic::board::{Board, TileContent, BOARD_SIZE};
 use crate::utils::ValueError;
 
-use super::MoveError;
+use super::{MoveError, Move, PieceType};
 
 
-pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
-    let mut moves = Vec::new();
+pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
+    let mut moves: Vec<Move> = Vec::new();
+
+    let promotion_y = match board.turn {
+        Player::White => 0,
+        Player::Black => BOARD_SIZE - 1,
+    };
+
+    for to in all_moves_regular(board, from) {
+        if promotion_y == to.yv() {
+            // Requires promotion
+            moves.push(Move::Promotion(to.clone(), PieceType::Queen));
+            moves.push(Move::Promotion(to.clone(), PieceType::Rook));
+            moves.push(Move::Promotion(to.clone(), PieceType::Knight));
+            moves.push(Move::Promotion(to, PieceType::Bishop));
+        } else {
+            // Regular move
+            moves.push(Move::Regular(to));
+        }
+    }
+
+    moves
+}
+
+
+fn all_moves_regular(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
+    let mut moves: Vec<Coordinate> = Vec::new();
 
     if let Ok(to) = coordinate_up(&board.turn, from, 1) {
         if matches!(board.get_tile(&to), TileContent::Empty) {
@@ -55,13 +80,43 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
         }
     }
 
-    // TODO: Promote
-
     moves
 }
 
 
-pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<Board, MoveError> {
+pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
+    if let Move::Promotion(_, new_type) = a_move {
+        if !matches!(new_type, PieceType::Queen | PieceType::Rook | PieceType::Knight | PieceType::Bishop) {
+            return Err(MoveError::IllegalMove);
+        }
+    }
+
+    let to = a_move.get_to();
+    let mut new_board = move_piece_regular(board, from, to)?;
+
+    let requires_promotion = match board.turn {
+        Player::White => 0,
+        Player::Black => BOARD_SIZE - 1,
+    } == to.yv();
+
+    match a_move {
+        Move::Regular(_) if requires_promotion => Err(MoveError::PromotionRequired),
+        Move::Regular(_) if !requires_promotion => Ok(new_board),
+        Move::Promotion(_, new_type) if requires_promotion => {
+            if let TileContent::Piece(piece) = new_board.get_tile(to) {
+                let new_tile = TileContent::Piece(piece.promoted(new_type.clone()));
+                new_board.set_tile(to, new_tile);
+                Ok(new_board)
+            } else {
+                panic!("Illegal state at move {:?} of player {:?} from {}", a_move, board.turn, from);
+            }
+        },
+        _ => Err(MoveError::IllegalMove),
+    }
+}
+
+
+fn move_piece_regular(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<Board, MoveError> {
     // Piece at `from` and `piece` is from player with turn already checked
     let from_x = from.xv();
     let to_x = to.xv();
@@ -121,7 +176,8 @@ pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<B
             TileContent::Empty => {
                 if is_en_passant(board, to) {
                     let mut new_board = board.turned();
-                    new_board.clear_tile(board.en_passant.as_ref().unwrap());
+                    let en_passant = board.en_passant.as_ref().unwrap();
+                    new_board.clear_tile(en_passant);
                     new_board.move_tile(from, to);
                     Ok(new_board)
                 } else {
@@ -130,8 +186,6 @@ pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<B
             },
         }
     }
-
-    // TODO: Promote
 
     Err(MoveError::IllegalMove)
 }
@@ -177,6 +231,8 @@ fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> b
 #[cfg(test)]
 mod tests {
     use crate::logic::board::{Board, TileContent};
+    use crate::logic::pieces::{PieceType, Move, Piece};
+    use crate::logic::pieces::pawn::move_piece_regular;
     use crate::logic::pieces::tests::{c, assert_all_moves_valid, assert_valid_in_all_moves};
 
     use super::{move_piece, all_moves};
@@ -185,12 +241,12 @@ mod tests {
     fn test_board() -> Board {
         Board::from_configuration([
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
-            [' ', 'p', ' ', ' ', ' ', ' ', ' ', ' '],
+            [' ', 'p', ' ', ' ', 'P', ' ', ' ', ' '],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             ['P', ' ', ' ', ' ', 'p', ' ', ' ', ' '],
             [' ', ' ', 'k', ' ', ' ', 'p', ' ', ' '],
             [' ', ' ', ' ', 'K', ' ', ' ', ' ', 'p'],
-            [' ', 'P', 'P', 'P', 'P', 'P', 'P', 'P'],
+            [' ', 'P', 'P', 'P', ' ', 'P', 'P', 'P'],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
         ])
     }
@@ -199,29 +255,59 @@ mod tests {
     #[test]
     fn all_moves_are_valid() {
         let board = test_board();
-        assert_all_moves_valid(&board, move_piece, all_moves);
+        assert_all_moves_valid(
+            &board,
+            Piece::from_letter('P').unwrap(),
+            move_piece,
+            all_moves,
+        );
 
         let turned = board.turned();
-        assert_all_moves_valid(&turned, move_piece, all_moves);
+        assert_all_moves_valid(
+            &turned,
+            Piece::from_letter('p').unwrap(),
+            move_piece,
+            all_moves,
+        );
     }
 
 
     #[test]
     fn all_valid_are_moves() {
         let board = test_board();
-        assert_valid_in_all_moves(&board, move_piece, all_moves);
+        assert_valid_in_all_moves(
+            &board,
+            Piece::from_letter('P').unwrap(),
+            move_piece,
+            all_moves,
+        );
         // En passant
         {
-            let prepared = move_piece(&board, &c(6, 6), &c(6, 4)).unwrap();
-            assert_valid_in_all_moves(&prepared, move_piece, all_moves);
+            let prepared = move_piece_regular(&board, &c(6, 6), &c(6, 4)).unwrap();
+            assert_valid_in_all_moves(
+                &prepared,
+                Piece::from_letter('P').unwrap(),
+                move_piece,
+                all_moves,
+            );
         }
 
         let turned = board.turned();
-        assert_valid_in_all_moves(&turned, move_piece, all_moves);
+        assert_valid_in_all_moves(
+            &turned,
+            Piece::from_letter('p').unwrap(),
+            move_piece,
+            all_moves,
+        );
         // En passant
         {
-            let prepared = move_piece(&turned, &c(1, 1), &c(1, 3)).unwrap();
-            assert_valid_in_all_moves(&prepared, move_piece, all_moves);
+            let prepared = move_piece_regular(&turned, &c(1, 1), &c(1, 3)).unwrap();
+            assert_valid_in_all_moves(
+                &prepared,
+                Piece::from_letter('p').unwrap(),
+                move_piece,
+                all_moves,
+            );
         }
     }
 
@@ -230,22 +316,22 @@ mod tests {
     fn valid_regular_moves() {
         let board = test_board();
 
-        move_piece(&board, &c(0, 3), &c(0, 2)).unwrap();
-        move_piece(&board, &c(2, 6), &c(2, 5)).unwrap();
+        move_piece_regular(&board, &c(0, 3), &c(0, 2)).unwrap();
+        move_piece_regular(&board, &c(2, 6), &c(2, 5)).unwrap();
         // Cannot return
-        assert!(move_piece(&board, &c(0, 3), &c(0, 4)).is_err()); 
+        assert!(move_piece_regular(&board, &c(0, 3), &c(0, 4)).is_err()); 
         // Cannot move to the side
-        assert!(move_piece(&board, &c(1, 6), &c(0, 6)).is_err());
+        assert!(move_piece_regular(&board, &c(1, 6), &c(0, 6)).is_err());
         // Cannot move through figures
-        assert!(move_piece(&board, &c(3, 6), &c(3, 5)).is_err());
-        assert!(move_piece(&board, &c(7, 6), &c(7, 5)).is_err());
+        assert!(move_piece_regular(&board, &c(3, 6), &c(3, 5)).is_err());
+        assert!(move_piece_regular(&board, &c(7, 6), &c(7, 5)).is_err());
 
         let turned = board.turned();
-        move_piece(&turned, &c(5, 4), &c(5, 5)).unwrap();
+        move_piece_regular(&turned, &c(5, 4), &c(5, 5)).unwrap();
         // Cannot return
-        assert!(move_piece(&turned, &c(5, 4), &c(5, 3)).is_err());
+        assert!(move_piece_regular(&turned, &c(5, 4), &c(5, 3)).is_err());
         // Cannot move through figures
-        assert!(move_piece(&turned, &c(7, 5), &c(7, 6)).is_err());
+        assert!(move_piece_regular(&turned, &c(7, 5), &c(7, 6)).is_err());
     }
 
 
@@ -253,12 +339,12 @@ mod tests {
     fn valid_double_moves() {
         let board = test_board();
 
-        move_piece(&board, &c(1, 6), &c(1, 4)).unwrap();
-        assert!(move_piece(&board, &c(0, 3), &c(0, 1)).is_err());
+        move_piece_regular(&board, &c(1, 6), &c(1, 4)).unwrap();
+        assert!(move_piece_regular(&board, &c(0, 3), &c(0, 1)).is_err());
 
         let turned = board.turned();
-        move_piece(&turned, &c(1, 1), &c(1, 3)).unwrap();
-        assert!(move_piece(&turned, &c(4, 3), &c(4, 5)).is_err());
+        move_piece_regular(&turned, &c(1, 1), &c(1, 3)).unwrap();
+        assert!(move_piece_regular(&turned, &c(4, 3), &c(4, 5)).is_err());
     }
 
 
@@ -266,37 +352,62 @@ mod tests {
     fn valid_regular_captures() {
         let board = test_board();
 
-        let new_board = move_piece(&board, &c(6, 6), &c(7, 5)).unwrap();
+        let new_board = move_piece_regular(&board, &c(6, 6), &c(7, 5)).unwrap();
         assert!(matches!(new_board.get_tile(&c(6, 6)), TileContent::Empty));
         assert_eq!(new_board.get_tile(&c(7, 5)), board.get_tile(&c(6, 6)));
 
         // Cannot throw own
-        assert!(move_piece(&board, &c(2, 6), &c(3, 5)).is_err());
+        assert!(move_piece_regular(&board, &c(2, 6), &c(3, 5)).is_err());
         // Cannot throw outside of diagonal
-        assert!(move_piece(&board, &c(1, 1), &c(2, 4)).is_err());
+        assert!(move_piece_regular(&board, &c(1, 1), &c(2, 4)).is_err());
     }
 
     #[test]
     fn valid_en_passants() {
         let board = test_board();
         {
-            let prepared = move_piece(&board, &c(6, 6), &c(6, 4)).unwrap();
+            let prepared = move_piece_regular(&board, &c(6, 6), &c(6, 4)).unwrap();
             assert!(!matches!(prepared.get_tile(&c(6, 4)), TileContent::Empty));
-            let new_board = move_piece(&prepared, &c(5, 4), &c(6, 5)).unwrap();
+            let new_board = move_piece_regular(&prepared, &c(5, 4), &c(6, 5)).unwrap();
             assert!(matches!(new_board.get_tile(&c(6, 4)), TileContent::Empty));
         }
-        assert!(move_piece(&board, &c(0, 3), &c(1, 2)).is_err());
+        assert!(move_piece_regular(&board, &c(0, 3), &c(1, 2)).is_err());
 
         let turned = board.turned();
         {
-            let prepared = move_piece(&turned, &c(1, 1), &c(1, 3)).unwrap();
+            let prepared = move_piece_regular(&turned, &c(1, 1), &c(1, 3)).unwrap();
             assert!(!matches!(prepared.get_tile(&c(1, 3)), TileContent::Empty));
-            let new_board = move_piece(&prepared, &c(0, 3), &c(1, 2)).unwrap();
+            let new_board = move_piece_regular(&prepared, &c(0, 3), &c(1, 2)).unwrap();
             assert!(matches!(new_board.get_tile(&c(1, 3)), TileContent::Empty));
         }
-        assert!(move_piece(&turned, &c(5, 4), &c(6, 5)).is_err());
+        assert!(move_piece_regular(&turned, &c(5, 4), &c(6, 5)).is_err());
     }
 
 
-    // TODO: Promote
+    #[test]
+    fn valid_promotion() {
+        let board = test_board();
+
+        assert!(move_piece(&board, &c(4, 1), &Move::Regular(c(4, 0))).is_err());
+
+        assert!(move_piece(
+            &board,
+            &c(4, 1),
+            &Move::Promotion(c(4, 0), PieceType::King)
+        ).is_err());
+
+        {
+            let result = move_piece(
+                &board,
+                &c(4, 1),
+                &Move::Promotion(c(4, 0), PieceType::Queen)
+            ).unwrap();
+
+            if let TileContent::Piece(piece) = result.get_tile(&c(4, 0)) {
+                assert!(matches!(piece.piece_type, PieceType::Queen));
+            } else {
+                panic!("Promotion did not work");
+            }
+        }
+    }
 }

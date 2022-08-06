@@ -4,6 +4,9 @@ use crate::utils::ValueError;
 
 use std::str::Chars;
 
+use super::game::GameState;
+use super::pieces::PieceType;
+
 
 pub struct PartialCoordinate {
     x: Option<usize>,
@@ -33,6 +36,7 @@ impl PartialCoordinate {
 
 pub enum Intent {
     Move(Option<PartialCoordinate>, Option<PartialCoordinate>),
+    SelectPromotionType(PieceType),
     Surrender,
     Invalid,
     None,
@@ -40,22 +44,42 @@ pub enum Intent {
 
 
 impl Intent {
-    pub fn from_partial_command(cmd: &str) -> Self {
-        match Self::try_parse_move(cmd) {
-            Ok(Some(intent)) => return intent,
-            Ok(None) => (),
-            Err(_) => (),
-        };
-
-        match Self::parse_surrender(cmd) {
-            Some(intent) => return intent,
-            None => (),
-        };
+    pub fn from_partial_command(state: &GameState, cmd: &str) -> Self {
+        match state {
+            GameState::WaitMove => {
+                match Self::try_parse_move(cmd) {
+                    Ok(Some(intent)) => return intent,
+                    Ok(None) => (),
+                    Err(_) => (),
+                };
+        
+                match Self::parse_surrender(cmd) {
+                    Some(intent) => return intent,
+                    None => (),
+                };
+            },
+            GameState::SelectPromotionType(..) => {
+                match Self::try_parse_select_promotion_type(cmd) {
+                    Ok(Some(intent)) => return intent,
+                    Ok(None) => (),
+                    Err(_) => (),
+                };
+            },
+        }
 
         match cmd.len() {
             0 => Self::None,
             _ => Self::Invalid,
         }
+    }
+
+    fn try_parse_select_promotion_type(cmd: &str) -> Result<Option<Self>, ValueError> {
+        let mut chars = cmd.chars();
+
+        Ok(match chars.next() {
+            Some(c) => Some(Intent::SelectPromotionType(PieceType::from_letter(c)?)),
+            None => None,
+        })
     }
 
     fn try_parse_move(cmd: &str) -> Result<Option<Self>, ValueError> {

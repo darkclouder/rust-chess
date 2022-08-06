@@ -65,11 +65,15 @@ impl Board {
             &mut self.tiles[from.yv()][from.xv()],
             TileContent::Empty,
         );
-        self.tiles[to.yv()][to.xv()] = from_tile;
+        self.set_tile(to, from_tile);
     }
 
     pub fn clear_tile(&mut self, coordinate: &Coordinate) {
-        self.tiles[coordinate.yv()][coordinate.xv()] = TileContent::Empty;
+        self.set_tile(coordinate, TileContent::Empty);
+    }
+
+    pub fn set_tile(&mut self, coordinate: &Coordinate, new_tile: TileContent) {
+        self.tiles[coordinate.yv()][coordinate.xv()] = new_tile;
     }
 }
 

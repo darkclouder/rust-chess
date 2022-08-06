@@ -12,6 +12,7 @@ macro_rules! FORMAT_OUTPUT_ERROR_MOVE_FULL {($a:expr,$b:expr) => {
 
 
 pub const OUTPUT_ENTER_MOVE: &str = "Press enter to move";
+pub const OUTPUT_HINT_PROMOTE: &str = "Piece will be promoted. Select promotion type: (Q)ueen, (R)ook, K(N)ight or (B)ishop.";
 
 pub const LABEL_WHITE: &str = "White";
 pub const LABEL_BLACK: &str = "Black";

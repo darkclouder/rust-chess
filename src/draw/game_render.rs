@@ -1,8 +1,9 @@
+use crate::logic::pieces::PieceType;
 use crate::{FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_ERROR_MOVE_FROM, FORMAT_OUTPUT_ERROR_MOVE_FULL};
 use crate::draw::text::OUTPUT_ENTER_MOVE;
 use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
-use crate::logic::game::Game;
+use crate::logic::game::{Game, GameState};
 use crate::logic::basic::{
     FieldColor,
     Player,
@@ -16,6 +17,8 @@ use crate::logic::intent::{Intent, PartialCoordinate};
 use termion::color;
 use termion::event::Key;
 use std::io::Write;
+
+use super::text::OUTPUT_HINT_PROMOTE;
 
 
 #[derive(Copy, Clone)]
@@ -207,31 +210,55 @@ impl<'a> GameRenderer<'a> {
             return;
         }
 
-        let intent = Intent::from_partial_command(&line);
+        let intent = Intent::from_partial_command(&self.game.state, &line);
 
         self.execute_intent(&intent)
             .unwrap_or_else(
-                |m| self.set_output_text(m)
+                |m| self.set_output_text(format!(
+                    "{}{}{}",
+                    color::Fg(color::Red),
+                    m,
+                    color::Fg(color::Reset),
+                ))
             );
     }
 
     pub fn execute_intent(&mut self, intent: &Intent) -> Result<(), String> {
         match intent {
-            Intent::Move(Some(a), Some(b)) => {
-                if let (Some(from), Some(to)) = (a.to_complete(), b.to_complete()) {
-                    self.game.move_piece(&from, &to)
-                        .map_or_else(
-                            |_| Err("Invalid move".to_string()),
-                            |_| {
-                                self.set_output_text("".to_string());
-                                Ok(())
-                            },
-                        )
-                } else {
-                    Err("Incomplete command".to_string())
+            Intent::Move(Some(a), Some(b)) => self.execute_move(a, b),
+            Intent::SelectPromotionType(piece_type) => self.execute_promotion(piece_type),
+            _ => Err("Invalid command".to_string()),
+        }
+    }
+
+    fn execute_promotion(&mut self, piece_type: &PieceType) -> Result<(), String> {
+        match &self.game.state {
+            GameState::SelectPromotionType(from, to) => {
+                let from = from.clone();
+                let to = to.clone();
+                match self.game.move_piece_with_promotion(&from, &to, piece_type) {
+                    Ok(_) => {
+                        self.set_output_text("".to_string());
+                        Ok(())
+                    },
+                    Err(_) => Err("Something went wrong.".to_string()),
                 }
             },
-            _ => Err("Invalid command".to_string()),
+            _ => Err("Not in promotion state".to_string())
+        }
+    }
+
+    fn execute_move(&mut self, a: &PartialCoordinate, b: &PartialCoordinate) -> Result<(), String> {
+        if let (Some(from), Some(to)) = (a.to_complete(), b.to_complete()) {
+            match self.game.move_piece(&from, &to) {
+                Ok(_) => {
+                    self.set_output_text("".to_string());
+                    Ok(())
+                },
+                Err(_) => Err("Illegal move".to_string()),
+            }
+        } else {
+            Err("Incomplete command".to_string())
         }
     }
 
@@ -239,11 +266,7 @@ impl<'a> GameRenderer<'a> {
         // TODO: get terminal size and only draw if size is sufficient
 
         let line = self.prompt.get_line();
-        let intent = Intent::from_partial_command(&line);
-
-        if self.output_text.is_empty() {
-            self.set_output_text(FORMAT_OUTPUT_TURN!(self.game.board.turn.to_label()));
-        }
+        let intent = Intent::from_partial_command(&self.game.state, &line);
 
         self.clear_highlight();
         self.evaluate_intent(&intent);
@@ -263,7 +286,17 @@ impl<'a> GameRenderer<'a> {
 
     fn draw_output(&mut self, offset_x: usize, offset_y: usize) {
         self.terminal.move_cursor(offset_x, offset_y);
-        write!(self.terminal.screen, "{}", self.output_text).unwrap();
+
+        let output_text = if self.output_text.is_empty() {
+            match self.game.state {
+                GameState::SelectPromotionType(..) => OUTPUT_HINT_PROMOTE.to_string(),
+                _ => FORMAT_OUTPUT_TURN!(self.game.board.turn.to_label()),
+            }
+        } else {
+            self.output_text.clone()
+        };
+
+        write!(self.terminal.screen, "{}", output_text).unwrap();
     }
 
     fn draw_coordinates(&mut self, offset_x: usize, offset_y: usize) {
