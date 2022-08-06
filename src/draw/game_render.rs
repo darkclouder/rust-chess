@@ -79,7 +79,6 @@ impl<'a> GameRenderer<'a> {
             if let Some(key) = self.terminal.read_key() {
                 match key {
                     Key::Char('\n') => self.on_prompt_enter(),
-                    Key::Char('\t') => self.on_prompt_tab(),
                     k => self.prompt.consume_key(&k),
                 }
             }
@@ -165,10 +164,15 @@ impl<'a> GameRenderer<'a> {
 
                     let highlighted_b = if let Some(b) = maybe_b {
                         if let Some(coord_b) = b.to_complete() {
+                            let highlight = if self.game.can_move(&coord_a, &coord_b) {
+                                BoardHighlight::Secondary
+                            } else {
+                                BoardHighlight::Error
+                            };
+
                             format!(
                                 "{}{}{}",
-                                // TODO: Check if move is valid
-                                BoardHighlight::Secondary.foreground_color(),
+                                highlight.foreground_color(),
                                 coord_b.to_field_name(),
                                 color::Fg(color::Reset),
                             )
@@ -229,10 +233,6 @@ impl<'a> GameRenderer<'a> {
             },
             _ => Err("Invalid command".to_string()),
         }
-    }
-
-    fn on_prompt_tab(&self) {
-        // TODO
     }
 
     fn draw_board(&mut self) {
