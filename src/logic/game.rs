@@ -39,7 +39,7 @@ impl Game {
 
         let new_board = match tile {
             TileContent::Piece(piece) => piece.move_piece(&self.board, from, to),
-            TileContent::Empty => Err(MoveError),
+            TileContent::Empty => Err(MoveError::IllegalMove),
         };
 
         self.board = new_board?;

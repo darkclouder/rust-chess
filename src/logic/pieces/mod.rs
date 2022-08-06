@@ -63,7 +63,7 @@ impl PieceType {
         // Piece at `from` and `piece` is from player with turn already checked
         match self {
             Self::Pawn => pawn::move_piece(board, from, to),
-            _ => Err(MoveError),
+            _ => Err(MoveError::IllegalMove),
         }
     }
 }
@@ -111,7 +111,7 @@ impl Piece {
         // Piece at `from` and already checked
 
         if self.player != board.turn {
-            return Err(MoveError);
+            return Err(MoveError::IllegalMove);
         }
 
         self.piece_type.move_piece(board, from, to)
@@ -120,7 +120,10 @@ impl Piece {
 
 
 #[derive(Debug)]
-pub struct MoveError;
+pub enum MoveError {
+    IllegalMove,
+    PromotionRequired,
+}
 impl Error for MoveError {}
 impl fmt::Display for MoveError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

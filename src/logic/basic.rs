@@ -28,7 +28,7 @@ impl Player {
 }
 
 
-#[derive(PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Coordinate {
     x: usize,
     y: usize,

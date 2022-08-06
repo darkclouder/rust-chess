@@ -1,4 +1,3 @@
-use std::cmp;
 use crate::logic::basic::{Coordinate, Player};
 use crate::logic::board::{Board, TileContent, BOARD_SIZE};
 use crate::utils::ValueError;
@@ -37,7 +36,7 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
                 }
             }
             // - En Passant
-            else if en_passant_to(board).map_or(false, |target| target == to_left) {
+            else if is_en_passant(board, &to_left) {
                 moves.push(to_left);
             }
         }
@@ -50,7 +49,7 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
                 }
             }
             // - En Passant
-            else if en_passant_to(board).map_or(false, |target| target == to_right) {
+            else if is_en_passant(board, &to_right) {
                 moves.push(to_right);
             }
         }
@@ -70,7 +69,7 @@ pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<B
     // Move
     if from_x == to_x {
         if !matches!(board.get_tile(to), TileContent::Empty) {
-            return Err(MoveError);
+            return Err(MoveError::IllegalMove);
         }
 
         // - Regular move
@@ -102,12 +101,12 @@ pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<B
             }
         }
 
-        return Err(MoveError);
+        return Err(MoveError::IllegalMove);
     }
 
     // Capture
-    if cmp::max(from_x, to_x) - cmp::min(from_x, to_x) == 1 {
-       return match board.get_tile(to) {
+    if is_move_up_diagonal(&board.turn, &from, &to) {
+        return match board.get_tile(to) {
             // - Regular capture
             TileContent::Piece(piece) => {
                 if piece.player != board.turn {
@@ -115,18 +114,18 @@ pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<B
                     new_board.move_tile(from, to);
                     Ok(new_board)
                 } else {
-                    Err(MoveError)
+                    Err(MoveError::IllegalMove)
                 }
             },
             // - En Passant
             TileContent::Empty => {
-                if en_passant_to(board).map_or(false, |target| target == *to) {
+                if is_en_passant(board, to) {
                     let mut new_board = board.turned();
                     new_board.clear_tile(board.en_passant.as_ref().unwrap());
                     new_board.move_tile(from, to);
                     Ok(new_board)
                 } else {
-                    Err(MoveError)
+                    Err(MoveError::IllegalMove)
                 }
             },
         }
@@ -134,7 +133,7 @@ pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<B
 
     // TODO: Promote
 
-    Err(MoveError)
+    Err(MoveError::IllegalMove)
 }
 
 
@@ -158,20 +157,32 @@ fn coordinate_up(player: &Player, from: &Coordinate, steps: usize) -> Result<Coo
 }
 
 
-fn en_passant_to(board: &Board) -> Option<Coordinate> {
+fn is_en_passant(board: &Board, to: &Coordinate) -> bool {
     board
         .en_passant
         .as_ref()
         .and_then(|coord| coordinate_up(&board.turn, &coord, 1).ok())
+        .map_or(false, |target| target == *to)
+}
+
+
+fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> bool {
+    match coordinate_up(&player, &from, 1) {
+        Ok(up) => up.yv() == to.yv() && from.xv().abs_diff(to.xv()) == 1,
+        Err(ValueError) => false,
+    }
 }
 
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Debug;
+
     use crate::logic::basic::Coordinate;
-    use crate::logic::board::Board;
+    use crate::logic::board::{Board, BOARD_SIZE};
 
     use super::{move_piece, all_moves};
+
 
     fn test_board() -> Board {
         Board::from_configuration([
@@ -186,6 +197,7 @@ mod tests {
         ])
     }
 
+
     fn assert_all_moves_valid(board: &Board, from: &Coordinate, moves: &Vec<Coordinate>) {
         for to in moves {
             match move_piece(board, from, to) {
@@ -199,26 +211,83 @@ mod tests {
         }
     }
 
+
+    fn assert_valid_in_all_moves(board: &Board, from: &Coordinate) {
+        let mut valid_moves: Vec<Coordinate> = Vec::new();
+
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                let to = c(x, y);
+                match move_piece(board, from, &to) {
+                    Ok(_) => valid_moves.push(to),
+                    Err(_) => (),
+                };
+            }
+        }
+
+        assert_vecs_same_elements(
+            &mut valid_moves, 
+            &mut all_moves(board, from),
+            &|c: &Coordinate| (c.xv(), c.yv()),
+        )
+    }
+
+
+    fn assert_vecs_same_elements<T, F, K>(actual: &mut Vec<T>, expected: &mut Vec<T>, keyf: &F)
+    where
+        T: Clone + Debug + PartialEq,
+        F: Fn(&T) -> K,
+        K: Ord,
+    {
+        assert!(actual.len() == expected.len());
+        let mut actual_sorted = actual.clone();
+        actual_sorted.sort_by_key(keyf);
+        let mut expected_sorted = expected.clone();
+        expected_sorted.sort_by_key(keyf);
+
+        for (actual_item, expected_item) in actual_sorted.iter().zip(expected_sorted.iter()) {
+            assert_eq!(*actual_item, *expected_item);
+        }
+    }
+
+
     fn c(x: usize, y: usize) -> Coordinate {
         Coordinate::try_new(x, y).unwrap()
     }
 
+
     #[test]
     fn all_moves_are_valid() {
         let board = test_board();
-
-        for x in 0..8 {
-            for y in 0..8 {
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
                 let from = c(x, y);
                 assert_all_moves_valid(&board, &from, &all_moves(&board, &from));
             }
         }
 
         let turned = board.turned();
-        for x in 0..8 {
-            for y in 0..8 {
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
                 let from = c(x, y);
                 assert_all_moves_valid(&turned, &from, &all_moves(&turned, &from));
+            }
+        }
+    }
+
+    #[test]
+    fn all_valid_are_moves() {
+        let board = test_board();
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                assert_valid_in_all_moves(&board, &c(x,y));
+            }
+        }
+
+        let turned = board.turned();
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                assert_valid_in_all_moves(&turned, &c(x,y));
             }
         }
     }
@@ -231,6 +300,8 @@ mod tests {
         move_piece(&board, &c(2, 6), &c(2, 5)).unwrap();
         // Cannot return
         assert!(move_piece(&board, &c(0, 3), &c(0, 4)).is_err()); 
+        // Cannot move to the side
+        assert!(move_piece(&board, &c(1, 6), &c(0, 6)).is_err());
         // Cannot move through figures
         assert!(move_piece(&board, &c(3, 6), &c(3, 5)).is_err());
         assert!(move_piece(&board, &c(7, 6), &c(7, 5)).is_err());
@@ -242,6 +313,7 @@ mod tests {
         // Cannot move through figures
         assert!(move_piece(&turned, &c(7, 5), &c(7, 6)).is_err());
     }
+
 
     #[test]
     fn valid_double_moves() {
@@ -255,7 +327,19 @@ mod tests {
         assert!(move_piece(&turned, &c(4, 3), &c(4, 5)).is_err());
     }
 
-    // TODO: Regular capture
+
+    #[test]
+    fn valid_regular_caputres() {
+        let board = test_board();
+
+        move_piece(&board, &c(6, 6), &c(7, 5)).unwrap();
+        // Cannot throw own
+        assert!(move_piece(&board, &c(2, 6), &c(3, 5)).is_err());
+        // Cannot throw outside of diagonal
+        assert!(move_piece(&board, &c(1, 1), &c(2, 4)).is_err());
+    }
+
+
     // TODO: En passant
     // TODO: Promote
 }
