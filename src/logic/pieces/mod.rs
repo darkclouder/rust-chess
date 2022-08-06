@@ -132,6 +132,7 @@ impl fmt::Display for MoveError {
 }
 
 
+#[cfg(test)]
 mod tests {
     use std::fmt::Debug;
 
@@ -169,9 +170,9 @@ mod tests {
             for y in 0..BOARD_SIZE {
                 let from = c(x, y);
                 assert_all_moves_valid_from(
-                    &board,
+                    board,
                     &from,
-                    &all_moves(&board, &from),
+                    &all_moves(board, &from),
                     move_piece,
                 );
             }
@@ -185,14 +186,12 @@ mod tests {
         move_piece: MovePieceFn
     ) {
         for to in moves {
-            match move_piece(board, from, to) {
-                Err(e) => assert!(
-                    false,
+            if let Err(e) = move_piece(board, from, to) {
+                panic!(
                     "Could not move from {} to {} as {:?}: {}",
                     from, to, board.turn, e
-                ),
-                Ok(_) => (),
-            };
+                );
+            }
         }
     }
 
@@ -205,7 +204,7 @@ mod tests {
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
                 assert_valid_in_all_moves_from(
-                    &board,
+                    board,
                     &c(x,y),
                     move_piece,
                     all_moves,
@@ -226,10 +225,10 @@ mod tests {
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
                 let to = c(x, y);
-                match move_piece(board, from, &to) {
-                    Ok(_) => valid_moves.push(to),
-                    Err(_) => (),
-                };
+
+                if move_piece(board, from, &to).is_ok() {
+                    valid_moves.push(to);
+                }
             }
         }
 

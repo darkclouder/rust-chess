@@ -28,7 +28,7 @@ enum BoardHighlight {
 
 
 impl BoardHighlight {
-    fn to_background_color(&self) -> String {
+    fn background_color(&self) -> String {
         match self {
             Self::Primary => color::Bg(color::Green).to_string(),
             Self::Secondary => color::Bg(color::Blue).to_string(),
@@ -37,7 +37,7 @@ impl BoardHighlight {
         }
     }
 
-    fn to_foreground_color(&self) -> String {
+    fn foreground_color(&self) -> String {
         match self {
             Self::Primary => color::Fg(color::Green).to_string(),
             Self::Secondary => color::Fg(color::Blue).to_string(),
@@ -89,7 +89,7 @@ impl<'a> GameRenderer<'a> {
     pub fn evaluate_intent(&mut self, intent: &Intent) {
         match intent {
             Intent::Move(Some(from), maybe_to) => {
-                self.highlight_move(&from, &maybe_to)
+                self.highlight_move(from, maybe_to)
             },
             _ => (),
         }
@@ -130,7 +130,7 @@ impl<'a> GameRenderer<'a> {
     }
 
     fn draw_prompt(&mut self, offset_x: usize, offset_y: usize, line: &String, intent: &Intent) {
-        let formatted_line = self.format_prompt(&line, &intent);
+        let formatted_line = self.format_prompt(line, intent);
         let turn = self.game.board.turn.to_label();
 
         self.terminal.move_cursor(offset_x, offset_y);
@@ -156,7 +156,7 @@ impl<'a> GameRenderer<'a> {
                     let field_name_a = coord_a.to_field_name();
                     let highlighted_a = format!(
                         "{}{}{}",
-                        highlight.to_foreground_color(),
+                        highlight.foreground_color(),
                         field_name_a,
                         color::Fg(color::Reset),
                     );
@@ -168,7 +168,7 @@ impl<'a> GameRenderer<'a> {
                             format!(
                                 "{}{}{}",
                                 // TODO: Check if move is valid
-                                BoardHighlight::Secondary.to_foreground_color(),
+                                BoardHighlight::Secondary.foreground_color(),
                                 coord_b.to_field_name(),
                                 color::Fg(color::Reset),
                             )
@@ -335,10 +335,7 @@ impl<'a> GameRenderer<'a> {
                 if x < BOARD_SIZE && y < BOARD_SIZE {
                     let background_color = self.get_background_color_at(&Coordinate::try_new(x, y).unwrap());
                     let board_highlight = &self.highlighted_cells[y as usize][x as usize];
-                    let is_highlighted = match board_highlight {
-                        BoardHighlight::None => false,
-                        _ => true,
-                    };
+                    let is_highlighted = !matches!(board_highlight, BoardHighlight::None);
 
                     for yi in 0..self.field_size {
                         for xi in 0..self.field_size * self.horizontal_scale {
@@ -348,7 +345,7 @@ impl<'a> GameRenderer<'a> {
                                 write!(
                                     self.terminal.screen,
                                     "{}*{}",
-                                    board_highlight.to_background_color(),
+                                    board_highlight.background_color(),
                                     color::Bg(color::Reset),
                                 ).unwrap();
                             } else {

@@ -14,8 +14,8 @@ pub struct PartialCoordinate {
 impl PartialCoordinate {
     pub fn try_new(xo: Option<usize>, yo: Option<usize>) -> Result<Self, ValueError> {
         Ok(Self {
-            x: xo.map(|v| Coordinate::try_axis_bound(v)).transpose()?,
-            y: yo.map(|v| Coordinate::try_axis_bound(v)).transpose()?,
+            x: xo.map(Coordinate::try_axis_bound).transpose()?,
+            y: yo.map(Coordinate::try_axis_bound).transpose()?,
         })
     }
 

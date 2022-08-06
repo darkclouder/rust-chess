@@ -26,7 +26,7 @@ impl Game {
     }
 
     pub fn can_move(&self, from: &Coordinate, to: &Coordinate) -> bool {
-        let tile = self.board.get_tile(&from);
+        let tile = self.board.get_tile(from);
         
         match tile {
             TileContent::Piece(piece) => piece.can_move(&self.board, from, to),
@@ -35,7 +35,7 @@ impl Game {
     }
 
     pub fn move_piece(&mut self, from: &Coordinate, to: &Coordinate) -> Result<(), MoveError> {
-        let tile = self.board.get_tile(&from);
+        let tile = self.board.get_tile(from);
 
         let new_board = match tile {
             TileContent::Piece(piece) => piece.move_piece(&self.board, from, to),

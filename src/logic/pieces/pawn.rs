@@ -15,9 +15,9 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
 
             // - Double move
             if is_player_pawn_original_pos(board, from) {
-                if let Ok(to) = coordinate_up(&board.turn, from, 2) {
+                if let Ok(to_double) = coordinate_up(&board.turn, from, 2) {
                     if matches!(board.get_tile(&to), TileContent::Empty) {
-                        moves.push(to.clone());
+                        moves.push(to_double);
                     }
                 }
             }
@@ -105,7 +105,7 @@ pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<B
     }
 
     // Capture
-    if is_move_up_diagonal(&board.turn, &from, &to) {
+    if is_move_up_diagonal(&board.turn, from, to) {
         return match board.get_tile(to) {
             // - Regular capture
             TileContent::Piece(piece) => {
@@ -138,10 +138,10 @@ pub fn move_piece(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<B
 
 
 fn is_player_pawn_original_pos(board: &Board, coordinate: &Coordinate) -> bool {
-    return match board.turn {
+    (match board.turn {
         Player::White => BOARD_SIZE - 2,
         Player::Black => 1,
-    } == coordinate.yv();
+    } == coordinate.yv())
 }
 
 
@@ -161,13 +161,13 @@ fn is_en_passant(board: &Board, to: &Coordinate) -> bool {
     board
         .en_passant
         .as_ref()
-        .and_then(|coord| coordinate_up(&board.turn, &coord, 1).ok())
+        .and_then(|coord| coordinate_up(&board.turn, coord, 1).ok())
         .map_or(false, |target| target == *to)
 }
 
 
 fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> bool {
-    match coordinate_up(&player, &from, 1) {
+    match coordinate_up(player, from, 1) {
         Ok(up) => up.yv() == to.yv() && from.xv().abs_diff(to.xv()) == 1,
         Err(ValueError) => false,
     }
