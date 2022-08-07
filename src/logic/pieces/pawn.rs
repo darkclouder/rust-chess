@@ -232,8 +232,7 @@ fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> b
 mod tests {
     use crate::logic::board::{Board, TileContent};
     use crate::logic::pieces::{PieceType, Move, Piece};
-    use crate::logic::pieces::pawn::move_piece_regular;
-    use crate::logic::pieces::tests::{c, assert_all_moves_valid, assert_valid_in_all_moves};
+    use crate::logic::pieces::tests::{c, m, assert_all_moves_valid, assert_valid_in_all_moves};
 
     use super::{move_piece, all_moves};
 
@@ -283,7 +282,7 @@ mod tests {
         );
         // En passant
         {
-            let prepared = move_piece_regular(&board, &c(6, 6), &c(6, 4)).unwrap();
+            let prepared = move_piece(&board, &c(6, 6), &m(6, 4)).unwrap();
             assert_valid_in_all_moves(
                 &prepared,
                 Piece::from_letter('P').unwrap(),
@@ -301,7 +300,7 @@ mod tests {
         );
         // En passant
         {
-            let prepared = move_piece_regular(&turned, &c(1, 1), &c(1, 3)).unwrap();
+            let prepared = move_piece(&turned, &c(1, 1), &m(1, 3)).unwrap();
             assert_valid_in_all_moves(
                 &prepared,
                 Piece::from_letter('p').unwrap(),
@@ -316,22 +315,22 @@ mod tests {
     fn valid_regular_moves() {
         let board = test_board();
 
-        move_piece_regular(&board, &c(0, 3), &c(0, 2)).unwrap();
-        move_piece_regular(&board, &c(2, 6), &c(2, 5)).unwrap();
+        move_piece(&board, &c(0, 3), &m(0, 2)).unwrap();
+        move_piece(&board, &c(2, 6), &m(2, 5)).unwrap();
         // Cannot return
-        assert!(move_piece_regular(&board, &c(0, 3), &c(0, 4)).is_err()); 
+        assert!(move_piece(&board, &c(0, 3), &m(0, 4)).is_err());
         // Cannot move to the side
-        assert!(move_piece_regular(&board, &c(1, 6), &c(0, 6)).is_err());
+        assert!(move_piece(&board, &c(1, 6), &m(0, 6)).is_err());
         // Cannot move through figures
-        assert!(move_piece_regular(&board, &c(3, 6), &c(3, 5)).is_err());
-        assert!(move_piece_regular(&board, &c(7, 6), &c(7, 5)).is_err());
+        assert!(move_piece(&board, &c(3, 6), &m(3, 5)).is_err());
+        assert!(move_piece(&board, &c(7, 6), &m(7, 5)).is_err());
 
         let turned = board.turned();
-        move_piece_regular(&turned, &c(5, 4), &c(5, 5)).unwrap();
+        move_piece(&turned, &c(5, 4), &m(5, 5)).unwrap();
         // Cannot return
-        assert!(move_piece_regular(&turned, &c(5, 4), &c(5, 3)).is_err());
+        assert!(move_piece(&turned, &c(5, 4), &m(5, 3)).is_err());
         // Cannot move through figures
-        assert!(move_piece_regular(&turned, &c(7, 5), &c(7, 6)).is_err());
+        assert!(move_piece(&turned, &c(7, 5), &m(7, 6)).is_err());
     }
 
 
@@ -339,12 +338,12 @@ mod tests {
     fn valid_double_moves() {
         let board = test_board();
 
-        move_piece_regular(&board, &c(1, 6), &c(1, 4)).unwrap();
-        assert!(move_piece_regular(&board, &c(0, 3), &c(0, 1)).is_err());
+        move_piece(&board, &c(1, 6), &m(1, 4)).unwrap();
+        assert!(move_piece(&board, &c(0, 3), &m(0, 1)).is_err());
 
         let turned = board.turned();
-        move_piece_regular(&turned, &c(1, 1), &c(1, 3)).unwrap();
-        assert!(move_piece_regular(&turned, &c(4, 3), &c(4, 5)).is_err());
+        move_piece(&turned, &c(1, 1), &m(1, 3)).unwrap();
+        assert!(move_piece(&turned, &c(4, 3), &m(4, 5)).is_err());
     }
 
 
@@ -352,35 +351,35 @@ mod tests {
     fn valid_regular_captures() {
         let board = test_board();
 
-        let new_board = move_piece_regular(&board, &c(6, 6), &c(7, 5)).unwrap();
+        let new_board = move_piece(&board, &c(6, 6), &m(7, 5)).unwrap();
         assert!(matches!(new_board.get_tile(&c(6, 6)), TileContent::Empty));
         assert_eq!(new_board.get_tile(&c(7, 5)), board.get_tile(&c(6, 6)));
 
         // Cannot throw own
-        assert!(move_piece_regular(&board, &c(2, 6), &c(3, 5)).is_err());
+        assert!(move_piece(&board, &c(2, 6), &m(3, 5)).is_err());
         // Cannot throw outside of diagonal
-        assert!(move_piece_regular(&board, &c(1, 1), &c(2, 4)).is_err());
+        assert!(move_piece(&board, &c(1, 1), &m(2, 4)).is_err());
     }
 
     #[test]
     fn valid_en_passants() {
         let board = test_board();
         {
-            let prepared = move_piece_regular(&board, &c(6, 6), &c(6, 4)).unwrap();
+            let prepared = move_piece(&board, &c(6, 6), &m(6, 4)).unwrap();
             assert!(!matches!(prepared.get_tile(&c(6, 4)), TileContent::Empty));
-            let new_board = move_piece_regular(&prepared, &c(5, 4), &c(6, 5)).unwrap();
+            let new_board = move_piece(&prepared, &c(5, 4), &m(6, 5)).unwrap();
             assert!(matches!(new_board.get_tile(&c(6, 4)), TileContent::Empty));
         }
-        assert!(move_piece_regular(&board, &c(0, 3), &c(1, 2)).is_err());
+        assert!(move_piece(&board, &c(0, 3), &m(1, 2)).is_err());
 
         let turned = board.turned();
         {
-            let prepared = move_piece_regular(&turned, &c(1, 1), &c(1, 3)).unwrap();
+            let prepared = move_piece(&turned, &c(1, 1), &m(1, 3)).unwrap();
             assert!(!matches!(prepared.get_tile(&c(1, 3)), TileContent::Empty));
-            let new_board = move_piece_regular(&prepared, &c(0, 3), &c(1, 2)).unwrap();
+            let new_board = move_piece(&prepared, &c(0, 3), &m(1, 2)).unwrap();
             assert!(matches!(new_board.get_tile(&c(1, 3)), TileContent::Empty));
         }
-        assert!(move_piece_regular(&turned, &c(5, 4), &c(6, 5)).is_err());
+        assert!(move_piece(&turned, &c(5, 4), &m(6, 5)).is_err());
     }
 
 
@@ -388,7 +387,7 @@ mod tests {
     fn valid_promotion() {
         let board = test_board();
 
-        assert!(move_piece(&board, &c(4, 1), &Move::Regular(c(4, 0))).is_err());
+        assert!(move_piece(&board, &c(4, 1), &m(4, 0)).is_err());
 
         assert!(move_piece(
             &board,

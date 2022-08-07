@@ -306,4 +306,8 @@ mod tests {
     pub fn c(x: usize, y: usize) -> Coordinate {
         Coordinate::try_new(x, y).unwrap()
     }
+
+    pub fn m(x: usize, y: usize) -> Move {
+        Move::Regular(c(x, y))
+    }
 }
