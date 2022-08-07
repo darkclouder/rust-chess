@@ -11,7 +11,7 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
 }
 
 
-fn all_moves_straight(board: &Board, from: &Coordinate) -> Vec<Move> {
+pub fn all_moves_straight(board: &Board, from: &Coordinate) -> Vec<Move> {
     let mut moves = Vec::new();
 
     let (from_x, from_y) = from.values();
@@ -169,7 +169,7 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
 }
 
 
-fn is_straight(from: &Coordinate, to: &Coordinate) -> bool {
+pub fn is_straight(from: &Coordinate, to: &Coordinate) -> bool {
     let (from_x, from_y) = from.values();
     let (to_x, to_y) = to.values();
     from_x == to_x || from_y == to_y
@@ -183,7 +183,7 @@ fn is_diagonal(from: &Coordinate, to: &Coordinate) -> bool {
 }
 
 
-fn piece_between_straight(board: &Board, from: &Coordinate, to: &Coordinate) -> bool {
+pub fn piece_between_straight(board: &Board, from: &Coordinate, to: &Coordinate) -> bool {
     let (from_x, from_y) = from.values();
     let (to_x, to_y) = to.values();
 
