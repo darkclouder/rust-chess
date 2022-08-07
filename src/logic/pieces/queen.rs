@@ -254,7 +254,7 @@ mod tests {
 
 
     #[test]
-    fn all_moves_are_valid() {
+    fn test_all_moves_are_valid() {
         let board = test_board();
         assert_all_moves_valid(
             &board,
@@ -274,7 +274,7 @@ mod tests {
 
 
     #[test]
-    fn all_valid_are_moves() {
+    fn test_all_valid_are_moves() {
         let board = test_board();
         assert_valid_in_all_moves(
             &board,
@@ -293,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn valid_moves() {
+    fn test_moves() {
         let board = test_board();
         // - Straight
         move_piece(&board, &c(6, 1), &m(5, 1)).unwrap();
@@ -317,7 +317,7 @@ mod tests {
     }
 
     #[test]
-    fn valid_captures() {
+    fn test_captures() {
         let board = test_board();
         // - Straight
         // Own piece

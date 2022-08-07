@@ -58,7 +58,7 @@ mod tests {
 
 
     #[test]
-    fn all_moves_are_valid() {
+    fn test_all_moves_are_valid() {
         let board = test_board();
         assert_all_moves_valid(
             &board,
@@ -78,7 +78,7 @@ mod tests {
 
 
     #[test]
-    fn all_valid_are_moves() {
+    fn test_all_valid_are_moves() {
         let board = test_board();
         assert_valid_in_all_moves(
             &board,

@@ -103,7 +103,7 @@ mod tests {
 
 
     #[test]
-    fn all_moves_are_valid() {
+    fn test_all_moves_are_valid() {
         let board = test_board();
         assert_all_moves_valid(
             &board,
@@ -123,7 +123,7 @@ mod tests {
 
 
     #[test]
-    fn all_valid_are_moves() {
+    fn test_all_valid_are_moves() {
         let board = test_board();
         assert_valid_in_all_moves(
             &board,
@@ -142,7 +142,7 @@ mod tests {
     }
 
     #[test]
-    fn valid_moves() {
+    fn test_moves() {
         let board = test_board();
         move_piece(&board, &c(3, 5), &m(2, 3)).unwrap();
         assert!(move_piece(&board, &c(3, 5), &m(1, 6)).is_err());
@@ -153,7 +153,7 @@ mod tests {
     }
 
     #[test]
-    fn valid_captures() {
+    fn test_captures() {
         let board = test_board();
         move_piece(&board, &c(3, 5), &m(4, 3)).unwrap();
         assert!(move_piece(&board, &c(3, 5), &m(5, 6)).is_err());

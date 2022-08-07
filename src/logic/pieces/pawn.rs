@@ -253,7 +253,7 @@ mod tests {
 
 
     #[test]
-    fn all_moves_are_valid() {
+    fn test_all_moves_are_valid() {
         let board = test_board();
         assert_all_moves_valid(
             &board,
@@ -273,7 +273,7 @@ mod tests {
 
 
     #[test]
-    fn all_valid_are_moves() {
+    fn test_all_valid_are_moves() {
         let board = test_board();
         assert_valid_in_all_moves(
             &board,
@@ -313,7 +313,7 @@ mod tests {
 
     
     #[test]
-    fn valid_regular_moves() {
+    fn test_regular_moves() {
         let board = test_board();
 
         move_piece(&board, &c(0, 3), &m(0, 2)).unwrap();
@@ -336,7 +336,7 @@ mod tests {
 
 
     #[test]
-    fn valid_double_moves() {
+    fn test_double_moves() {
         let board = test_board();
 
         move_piece(&board, &c(1, 6), &m(1, 4)).unwrap();
@@ -349,7 +349,7 @@ mod tests {
 
 
     #[test]
-    fn valid_regular_captures() {
+    fn test_regular_captures() {
         let board = test_board();
 
         let new_board = move_piece(&board, &c(6, 6), &m(7, 5)).unwrap();
@@ -367,7 +367,7 @@ mod tests {
     }
 
     #[test]
-    fn valid_en_passants() {
+    fn test_en_passants() {
         let board = test_board();
         {
             let prepared = move_piece(&board, &c(6, 6), &m(6, 4)).unwrap();
@@ -389,7 +389,7 @@ mod tests {
 
 
     #[test]
-    fn valid_promotion() {
+    fn test_promotion() {
         let board = test_board();
 
         assert!(move_piece(&board, &c(4, 1), &m(4, 0)).is_err());
