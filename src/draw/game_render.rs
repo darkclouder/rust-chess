@@ -1,5 +1,11 @@
 use crate::logic::pieces::{PieceType, MoveError};
-use crate::{FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_ERROR_MOVE_FROM, FORMAT_OUTPUT_ERROR_MOVE_FULL, FORMAT_OUTPUT_TURN_SHORT};
+use crate::{
+    FORMAT_OUTPUT_TURN,
+    FORMAT_OUTPUT_ERROR_MOVE_FROM,
+    FORMAT_OUTPUT_ERROR_MOVE_FULL,
+    FORMAT_OUTPUT_TURN_SHORT,
+    OUTPUT_CHECKMATE,
+};
 use crate::draw::text::OUTPUT_ENTER_MOVE;
 use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
@@ -299,6 +305,7 @@ impl<'a> GameRenderer<'a> {
                     color::Fg(color::Reset),
                     FORMAT_OUTPUT_TURN_SHORT!(self.game.board.turn.to_label()),
                 ),
+                GameState::CheckMate => OUTPUT_CHECKMATE!(self.game.board.turn.to_label()),
                 _ => FORMAT_OUTPUT_TURN!(self.game.board.turn.to_label()),
             }
         } else {

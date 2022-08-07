@@ -80,6 +80,17 @@ impl PieceType {
             Self::King => king::move_piece(board, from, a_move),
         }
     }
+
+    pub fn all_moves(&self, board: &Board, from: &Coordinate) -> Vec<Move> {
+        match self {
+            Self::Pawn => pawn::all_moves(board, from),
+            Self::Queen => queen::all_moves(board, from),
+            Self::Rook => rook::all_moves(board, from),
+            Self::Bishop => bishop::all_moves(board, from),
+            Self::Knight => knight::all_moves(board, from),
+            Self::King => king::all_moves(board, from),
+        }
+    }
 }
 
 
@@ -131,6 +142,10 @@ impl Piece {
         }
 
         self.piece_type.move_piece(board, from, a_move)
+    }
+
+    pub fn all_moves(&self, board: &Board, from: &Coordinate) -> Vec<Move> {
+        self.piece_type.all_moves(board, from)
     }
 
     pub fn promoted(&self, new_type: PieceType) -> Self {

@@ -7,6 +7,7 @@ use super::pieces::{MoveError, Move, PieceType};
 pub enum GameState {
     WaitMove(bool),
     SelectPromotionType(Coordinate, Coordinate),
+    CheckMate,
 }
 
 
@@ -89,7 +90,14 @@ impl Game {
         if new_board.is_player_on_check(&self.board.turn) {
             Err(MoveError::IsCheck)
         } else {
-            self.state = GameState::WaitMove(new_board.is_player_on_check(&new_board.turn));
+            let on_check = new_board.is_player_on_check(&new_board.turn);
+
+            if on_check && new_board.is_current_player_checkmate() {
+                self.state = GameState::CheckMate;
+            } else {
+                self.state = GameState::WaitMove(on_check);
+            }
+
             Ok(new_board)
         }
     }

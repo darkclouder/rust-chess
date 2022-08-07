@@ -11,7 +11,8 @@ macro_rules! FORMAT_OUTPUT_ERROR_MOVE_FROM {($a:expr) => {
 macro_rules! FORMAT_OUTPUT_ERROR_MOVE_FULL {($a:expr,$b:expr) => {
     format!("You cannot move from {} to {}", $a, $b)
 }}
-
+#[macro_export]
+macro_rules! OUTPUT_CHECKMATE {($a:expr) => { format!("Checkmate! Sorry, you lost, {}!", $a) }}
 
 pub const OUTPUT_ENTER_MOVE: &str = "Press enter to move";
 pub const OUTPUT_HINT_PROMOTE: &str = "Piece will be promoted. Select promotion type: (Q)ueen, (R)ook, K(N)ight or (B)ishop.";

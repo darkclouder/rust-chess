@@ -77,9 +77,27 @@ impl Board {
         self.tiles[coordinate.yv()][coordinate.xv()] = new_tile;
     }
 
+    pub fn is_current_player_checkmate(&self) -> bool {
+        let piece_coords = self.find_own_pieces(&self.turn);
+
+        for coord in piece_coords {
+            if let TileContent::Piece(piece) = self.get_tile(&coord) {
+                for a_move in piece.all_moves(self, &coord) {
+                    let new_board = piece.move_piece(self, &coord, &a_move).unwrap();
+                    if !new_board.is_player_on_check(&self.turn) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        true
+    }
+
     pub fn is_player_on_check(&self, player: &Player) -> bool {
         let (king_coord, enemy_coords) = self.find_pieces_for_check(player);
 
+        // TODO: Refactor this soo we don't need to copy entire board for every check.
         let board = if *player == self.turn { self.turned() } else { self.clone() };
 
         for enemy_coord in enemy_coords {
@@ -91,6 +109,22 @@ impl Board {
         }
 
         false
+    }
+
+    fn find_own_pieces(&self, player: &Player) -> Vec<Coordinate> {
+        let mut coords: Vec<Coordinate> = Vec::new();
+
+        for y in 0..BOARD_SIZE {
+            for x in 0..BOARD_SIZE {
+                if let TileContent::Piece(piece) = &self.tiles[y][x] {
+                    if piece.player == *player {
+                        coords.push(Coordinate::try_new(x, y).unwrap());
+                    }
+                }
+            }
+        }
+
+        coords
     }
 
     fn find_pieces_for_check(&self, king_player: &Player) -> (Coordinate, Vec<Coordinate>) {

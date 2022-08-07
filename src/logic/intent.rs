@@ -65,6 +65,9 @@ impl Intent {
                     Err(_) => (),
                 };
             },
+            GameState::CheckMate => {
+                () // TODO
+            },
         }
 
         match cmd.len() {
