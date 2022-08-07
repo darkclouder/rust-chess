@@ -168,6 +168,7 @@ impl Move {
 pub enum MoveError {
     IllegalMove,
     PromotionRequired,
+    IsCheck,
 }
 impl Error for MoveError {}
 impl fmt::Display for MoveError {

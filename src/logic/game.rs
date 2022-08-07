@@ -5,7 +5,7 @@ use super::pieces::{MoveError, Move, PieceType};
 
 
 pub enum GameState {
-    WaitMove,
+    WaitMove(bool),
     SelectPromotionType(Coordinate, Coordinate),
 }
 
@@ -18,9 +18,12 @@ pub struct Game {
 
 impl Game {
     pub fn default() -> Self {
+        let board = Board::default();
+        let is_check = board.is_player_on_check(&board.turn);
+
         Self {
-            board: Board::default(),
-            state: GameState::WaitMove,
+            board,
+            state: GameState::WaitMove(is_check),
         }
     }
 
@@ -48,21 +51,11 @@ impl Game {
         to: &Coordinate,
         piece_type: &PieceType,
     ) -> Result<(), MoveError> {
-        let tile = self.board.get_tile(from);
-
-        let moved = match tile {
-            TileContent::Piece(piece) => piece.move_piece(
-                &self.board,
-                from,
-                &Move::Promotion(to.clone(), piece_type.clone())
-            ),
-            TileContent::Empty => Err(MoveError::IllegalMove),
-        };
+        let moved = self.try_move(from, &Move::Promotion(to.clone(), piece_type.clone()));
 
         match moved {
             Ok(new_board) => {
                 self.board = new_board;
-                self.state = GameState::WaitMove;
                 Ok(())
             },
             Err(err) => Err(err),
@@ -70,21 +63,11 @@ impl Game {
     }
 
     pub fn move_piece(&mut self, from: &Coordinate, to: &Coordinate) -> Result<(), MoveError> {
-        let tile = self.board.get_tile(from);
-
-        let moved = match tile {
-            TileContent::Piece(piece) => piece.move_piece(
-                &self.board,
-                from,
-                &Move::Regular(to.clone())
-            ),
-            TileContent::Empty => Err(MoveError::IllegalMove),
-        };
+        let moved = self.try_move(from, &Move::Regular(to.clone()));
 
         match moved {
             Ok(new_board) => {
                 self.board = new_board;
-                self.state = GameState::WaitMove;
                 Ok(())
             },
             Err(MoveError::PromotionRequired) => {
@@ -92,6 +75,22 @@ impl Game {
                 Ok(())
             },
             Err(err) => Err(err),
+        }
+    }
+
+    fn try_move(&mut self, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
+        let tile = self.board.get_tile(from);
+
+        let new_board = match tile {
+            TileContent::Piece(piece) => piece.move_piece(&self.board, from, a_move),
+            TileContent::Empty => Err(MoveError::IllegalMove),
+        }?;
+
+        if new_board.is_player_on_check(&self.board.turn) {
+            Err(MoveError::IsCheck)
+        } else {
+            self.state = GameState::WaitMove(new_board.is_player_on_check(&new_board.turn));
+            Ok(new_board)
         }
     }
 }

@@ -1,5 +1,5 @@
-use crate::logic::pieces::PieceType;
-use crate::{FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_ERROR_MOVE_FROM, FORMAT_OUTPUT_ERROR_MOVE_FULL};
+use crate::logic::pieces::{PieceType, MoveError};
+use crate::{FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_ERROR_MOVE_FROM, FORMAT_OUTPUT_ERROR_MOVE_FULL, FORMAT_OUTPUT_TURN_SHORT};
 use crate::draw::text::OUTPUT_ENTER_MOVE;
 use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
@@ -18,7 +18,7 @@ use termion::color;
 use termion::event::Key;
 use std::io::Write;
 
-use super::text::OUTPUT_HINT_PROMOTE;
+use super::text::{OUTPUT_HINT_PROMOTE, OUTPUT_ILLEGAL_MOVE, OUTPUT_MOVE_ERROR_CHECK, OUTPUT_STATE_CHECK};
 
 
 #[derive(Copy, Clone)]
@@ -241,7 +241,7 @@ impl<'a> GameRenderer<'a> {
                         self.set_output_text("".to_string());
                         Ok(())
                     },
-                    Err(_) => Err("Something went wrong.".to_string()),
+                    Err(err) => Err(format!("Something went wrong: {:?}", err).to_string()),
                 }
             },
             _ => Err("Not in promotion state".to_string())
@@ -255,7 +255,8 @@ impl<'a> GameRenderer<'a> {
                     self.set_output_text("".to_string());
                     Ok(())
                 },
-                Err(_) => Err("Illegal move".to_string()),
+                Err(MoveError::IsCheck) => Err(OUTPUT_MOVE_ERROR_CHECK.to_string()),
+                Err(_) => Err(OUTPUT_ILLEGAL_MOVE.to_string()),
             }
         } else {
             Err("Incomplete command".to_string())
@@ -287,9 +288,17 @@ impl<'a> GameRenderer<'a> {
     fn draw_output(&mut self, offset_x: usize, offset_y: usize) {
         self.terminal.move_cursor(offset_x, offset_y);
 
-        let output_text = if self.output_text.is_empty() {
+        let output_text = if 
+        self.output_text.is_empty() {
             match self.game.state {
                 GameState::SelectPromotionType(..) => OUTPUT_HINT_PROMOTE.to_string(),
+                GameState::WaitMove(true) => format!(
+                    "{}{}{} {}",
+                    color::Fg(color::Yellow),
+                    OUTPUT_STATE_CHECK,
+                    color::Fg(color::Reset),
+                    FORMAT_OUTPUT_TURN_SHORT!(self.game.board.turn.to_label()),
+                ),
                 _ => FORMAT_OUTPUT_TURN!(self.game.board.turn.to_label()),
             }
         } else {

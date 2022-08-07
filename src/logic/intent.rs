@@ -46,7 +46,7 @@ pub enum Intent {
 impl Intent {
     pub fn from_partial_command(state: &GameState, cmd: &str) -> Self {
         match state {
-            GameState::WaitMove => {
+            GameState::WaitMove(_) => {
                 match Self::try_parse_move(cmd) {
                     Ok(Some(intent)) => return intent,
                     Ok(None) => (),
