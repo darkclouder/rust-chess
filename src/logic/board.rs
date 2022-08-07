@@ -61,7 +61,7 @@ impl Board {
     }
 
     pub fn move_tile(&mut self, from: &Coordinate, to: &Coordinate) {
-        let from_tile = match self.get_tile(&from) {
+        let from_tile = match self.get_tile(from) {
             TileContent::Empty => TileContent::Empty,
             TileContent::Piece(piece) => TileContent::Piece(piece.moved()),
         };

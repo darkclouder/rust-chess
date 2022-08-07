@@ -4,7 +4,7 @@ use crate::{
     FORMAT_OUTPUT_ERROR_MOVE_FROM,
     FORMAT_OUTPUT_ERROR_MOVE_FULL,
     FORMAT_OUTPUT_TURN_SHORT,
-    OUTPUT_CHECKMATE,
+    FORMAT_OUTPUT_CHECKMATE, FORMAT_PROMPT_MOVE, FORMAT_OUTPUT_CIRITCAL_ERROR,
 };
 use crate::draw::text::OUTPUT_ENTER_MOVE;
 use crate::draw::prompt::Prompt;
@@ -24,7 +24,7 @@ use termion::color;
 use termion::event::Key;
 use std::io::Write;
 
-use super::text::{OUTPUT_HINT_PROMOTE, OUTPUT_ILLEGAL_MOVE, OUTPUT_MOVE_ERROR_CHECK, OUTPUT_STATE_CHECK};
+use super::text::{OUTPUT_HINT_PROMOTE, OUTPUT_ILLEGAL_MOVE, OUTPUT_MOVE_ERROR_CHECK, OUTPUT_STATE_CHECK, OUTPUT_INVALID_COMMAND};
 
 
 #[derive(Copy, Clone)]
@@ -95,11 +95,8 @@ impl<'a> GameRenderer<'a> {
     }
 
     pub fn evaluate_intent(&mut self, intent: &Intent) {
-        match intent {
-            Intent::Move(Some(from), maybe_to) => {
-                self.highlight_move(from, maybe_to)
-            },
-            _ => (),
+        if let Intent::Move(Some(from), maybe_to) = intent {
+            self.highlight_move(from, maybe_to);
         }
     }
 
@@ -192,12 +189,9 @@ impl<'a> GameRenderer<'a> {
                         remaining.to_string()
                     };
 
-                    format!(
-                        "{}{} to {}{}",
-                        highlighted_a,
-                        color::Fg(color::LightBlack),
-                        color::Fg(color::Reset),
-                        highlighted_b,
+                    FORMAT_PROMPT_MOVE!(
+                        format!("{}{}", highlighted_a, color::Fg(color::LightBlack)),
+                        format!("{}{}", color::Fg(color::Reset), highlighted_b)
                     )
                 } else {
                     line.clone()
@@ -233,7 +227,7 @@ impl<'a> GameRenderer<'a> {
         match intent {
             Intent::Move(Some(a), Some(b)) => self.execute_move(a, b),
             Intent::SelectPromotionType(piece_type) => self.execute_promotion(piece_type),
-            _ => Err("Invalid command".to_string()),
+            _ => Err(OUTPUT_INVALID_COMMAND.to_string()),
         }
     }
 
@@ -247,7 +241,7 @@ impl<'a> GameRenderer<'a> {
                         self.set_output_text("".to_string());
                         Ok(())
                     },
-                    Err(err) => Err(format!("Something went wrong: {:?}", err).to_string()),
+                    Err(err) => Err(FORMAT_OUTPUT_CIRITCAL_ERROR!(err)),
                 }
             },
             _ => Err("Not in promotion state".to_string())
@@ -265,7 +259,7 @@ impl<'a> GameRenderer<'a> {
                 Err(_) => Err(OUTPUT_ILLEGAL_MOVE.to_string()),
             }
         } else {
-            Err("Incomplete command".to_string())
+            Err(OUTPUT_INVALID_COMMAND.to_string())
         }
     }
 
@@ -305,7 +299,7 @@ impl<'a> GameRenderer<'a> {
                     color::Fg(color::Reset),
                     FORMAT_OUTPUT_TURN_SHORT!(self.game.board.turn.to_label()),
                 ),
-                GameState::CheckMate => OUTPUT_CHECKMATE!(self.game.board.turn.to_label()),
+                GameState::CheckMate => FORMAT_OUTPUT_CHECKMATE!(self.game.board.turn.to_label()),
                 _ => FORMAT_OUTPUT_TURN!(self.game.board.turn.to_label()),
             }
         } else {

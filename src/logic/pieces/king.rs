@@ -33,13 +33,13 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
     // -- Castling
     if x + 2 < BOARD_SIZE {
         let to = Coordinate::try_new(x + 2, y).unwrap();
-        if let Some(_) = get_castling_rook(board, from, &to) {
+        if get_castling_rook(board, from, &to).is_some() {
             moves.push(Move::Regular(to));
         }
     }
     if x >= 2 {
         let to = Coordinate::try_new(x - 2, y).unwrap();
-        if let Some(_) = get_castling_rook(board, from, &to) {
+        if get_castling_rook(board, from, &to).is_some() {
             moves.push(Move::Regular(to));
         }
     }
@@ -49,7 +49,7 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
 
 
 pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
-    return match a_move {
+    match a_move {
         Move::Promotion(..) => Err(MoveError::IllegalMove),
         Move::Regular(to) => {
             if from == to {
@@ -63,7 +63,7 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
             let delta_y = from_y.abs_diff(to_y);
 
             if delta_x < 2 && delta_y < 2 {
-                if is_friendly_fire(&board, &to) {
+                if is_friendly_fire(board, to) {
                     return Err(MoveError::IllegalMove);
                 }
 
@@ -71,7 +71,7 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
                 let mut new_board = board.turned();
                 new_board.move_tile(from, to);
                 Ok(new_board)
-            } else if let Some(rook_coord) = get_castling_rook(board, &from, &to) {
+            } else if let Some(rook_coord) = get_castling_rook(board, from, to) {
                 // - Castling
                 let mut new_board = board.turned();
                 new_board.move_tile(from, to);
@@ -81,7 +81,7 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
                 Err(MoveError::IllegalMove)
             }
         },
-    };
+    }
 }
 
 
@@ -93,7 +93,7 @@ fn get_castling_rook(board: &Board, from: &Coordinate, to: &Coordinate) -> Optio
 
     if delta_y != 0 || delta_x != 2 { return None; }
 
-    if let TileContent::Piece(piece) = board.get_tile(&from) {
+    if let TileContent::Piece(piece) = board.get_tile(from) {
         if piece.moved { return None; }
     } else { return None; }
 

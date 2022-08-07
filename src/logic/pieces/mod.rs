@@ -62,11 +62,10 @@ impl PieceType {
 
     pub fn can_move(&self, board: &Board, from: &Coordinate, to: &Coordinate) -> bool {
         // Piece at `from` and `piece` is from player with turn already checked
-        match self.move_piece(board, from, &Move::Regular(to.clone())) {
-            Ok(_) => true,
-            Err(MoveError::PromotionRequired) => true,
-            _ => false,
-        }
+        matches!(
+            self.move_piece(board, from, &Move::Regular(to.clone())),
+            Ok(_) | Err(MoveError::PromotionRequired)
+        )
     }
 
     pub fn move_piece(&self, board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
@@ -172,8 +171,8 @@ pub enum Move {
 impl Move {
     pub fn get_to(&self) -> &Coordinate {
         match self {
-            Move::Regular(to) => &to,
-            Move::Promotion(to, _) => &to,
+            Move::Regular(to) => to,
+            Move::Promotion(to, _) => to,
         }
     }
 }

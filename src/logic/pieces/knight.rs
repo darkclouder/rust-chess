@@ -50,14 +50,14 @@ fn is_friendly_fire(board: &Board, coordinate: &Coordinate) -> bool {
 
 
 pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
-    return match a_move {
+    match a_move {
         Move::Promotion(..) => Err(MoveError::IllegalMove),
         Move::Regular(to) => {
             if from == to {
                 return Err(MoveError::IllegalMove);
             }
 
-            if is_friendly_fire(&board, &to) {
+            if is_friendly_fire(board, to) {
                 return Err(MoveError::IllegalMove);
             }
 
@@ -72,10 +72,10 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
                 new_board.move_tile(from, to);
                 Ok(new_board)
             } else {
-                return Err(MoveError::IllegalMove)
+                Err(MoveError::IllegalMove)
             }
         },
-    };
+    }
 }
 
 
