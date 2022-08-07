@@ -230,6 +230,7 @@ fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> b
 
 #[cfg(test)]
 mod tests {
+    use crate::logic::basic::Player;
     use crate::logic::board::{Board, TileContent};
     use crate::logic::pieces::{PieceType, Move, Piece};
     use crate::logic::pieces::tests::{c, m, assert_all_moves_valid, assert_valid_in_all_moves};
@@ -353,7 +354,11 @@ mod tests {
 
         let new_board = move_piece(&board, &c(6, 6), &m(7, 5)).unwrap();
         assert!(matches!(new_board.get_tile(&c(6, 6)), TileContent::Empty));
-        assert_eq!(new_board.get_tile(&c(7, 5)), board.get_tile(&c(6, 6)));
+        assert!(matches!(new_board.get_tile(&c(7, 5)), TileContent::Piece(_)));
+        if let TileContent::Piece(piece) = new_board.get_tile(&c(7, 5)) {
+            assert!(matches!(piece.piece_type, PieceType::Pawn));
+            assert!(matches!(piece.player, Player::White));
+        }
 
         // Cannot throw own
         assert!(move_piece(&board, &c(2, 6), &m(3, 5)).is_err());

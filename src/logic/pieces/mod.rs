@@ -87,6 +87,7 @@ impl PieceType {
 pub struct Piece {
     pub player: Player,
     pub piece_type: PieceType,
+    pub moved: bool,
 }
 
 
@@ -104,6 +105,7 @@ impl Piece {
         Ok(Self {
             player,
             piece_type,
+            moved: false,
         })
     }
 
@@ -134,6 +136,12 @@ impl Piece {
     pub fn promoted(&self, new_type: PieceType) -> Self {
         let mut new_piece = self.clone();
         new_piece.piece_type = new_type;
+        new_piece
+    }
+
+    pub fn moved(&self) -> Self {
+        let mut new_piece = self.clone();
+        new_piece.moved = true;
         new_piece
     }
 }
@@ -288,7 +296,7 @@ mod tests {
     ) {
         let mut valid_moves: Vec<Move> = Vec::new();
 
-        println!("From {}", from);
+        println!("From {} as {:?}", from, board.turn);
 
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {

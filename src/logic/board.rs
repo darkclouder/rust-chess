@@ -1,5 +1,3 @@
-use std::mem;
-
 use crate::logic::pieces::Piece;
 use crate::logic::basic::{Coordinate, Player};
 use crate::utils::DiscreetUnwrap;
@@ -61,10 +59,11 @@ impl Board {
     }
 
     pub fn move_tile(&mut self, from: &Coordinate, to: &Coordinate) {
-        let from_tile = mem::replace(
-            &mut self.tiles[from.yv()][from.xv()],
-            TileContent::Empty,
-        );
+        let from_tile = match self.get_tile(&from) {
+            TileContent::Empty => TileContent::Empty,
+            TileContent::Piece(piece) => TileContent::Piece(piece.moved()),
+        };
+        self.clear_tile(from);
         self.set_tile(to, from_tile);
     }
 
@@ -97,7 +96,7 @@ impl TileContent {
 
 
 const DEFAULT_PIECE_CONFIGURATION: [[char; BOARD_SIZE]; BOARD_SIZE] = [
-    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+    ['r', 'n', 'b', 'k', 'q', 'b', 'n', 'r'],
     ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
     [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
     [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
