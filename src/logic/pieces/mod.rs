@@ -1,6 +1,7 @@
 pub mod pawn;
 pub mod queen;
 pub mod rook;
+pub mod bishop;
 
 use std::error::Error;
 use std::fmt;
@@ -71,6 +72,7 @@ impl PieceType {
             Self::Pawn => pawn::move_piece(board, from, a_move),
             Self::Queen => queen::move_piece(board, from, a_move),
             Self::Rook => rook::move_piece(board, from, a_move),
+            Self::Bishop => bishop::move_piece(board, from, a_move),
             _ => Err(MoveError::IllegalMove),
         }
     }
