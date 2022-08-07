@@ -64,6 +64,10 @@ impl Coordinate {
             _ => panic!("Unreachable"),
         }
     }
+
+    pub fn values(&self) -> (usize, usize) {
+        (self.x, self.y)
+    }
 }
 
 

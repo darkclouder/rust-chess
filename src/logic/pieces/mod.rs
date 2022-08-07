@@ -1,4 +1,5 @@
 pub mod pawn;
+pub mod queen;
 
 use std::error::Error;
 use std::fmt;
@@ -67,6 +68,7 @@ impl PieceType {
         // Piece at `from` and `piece` is from player with turn already checked
         match self {
             Self::Pawn => pawn::move_piece(board, from, a_move),
+            Self::Queen => queen::move_piece(board, from, a_move),
             _ => Err(MoveError::IllegalMove),
         }
     }
@@ -177,7 +179,9 @@ mod tests {
         F: Fn(&T) -> K,
         K: Ord,
     {
-        assert!(actual.len() == expected.len());
+        println!("{:?}", actual);
+        println!("{:?}", expected);
+        assert_eq!(actual.len(), expected.len());
         let mut actual_sorted = actual.clone();
         actual_sorted.sort_by_key(keyf);
         let mut expected_sorted = expected.clone();
@@ -267,6 +271,8 @@ mod tests {
         all_moves: AllMovesFn
     ) {
         let mut valid_moves: Vec<Move> = Vec::new();
+
+        println!("From {}", from);
 
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
