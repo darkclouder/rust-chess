@@ -1,7 +1,7 @@
 use crate::logic::basic::Coordinate;
 use crate::logic::board::{Board, TileContent, BOARD_SIZE};
 
-use super::{Move, MoveError};
+use super::{Move, MoveError, is_friendly_fire};
 
 
 pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
@@ -141,10 +141,8 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
                 return Err(MoveError::IllegalMove);
             }
 
-            if let TileContent::Piece(piece) = board.get_tile(to) {
-                if piece.player == board.turn {
-                    return Err(MoveError::IllegalMove);
-                }
+            if is_friendly_fire(&board, &to) {
+                return Err(MoveError::IllegalMove);
             }
 
             if is_straight(from, to) {

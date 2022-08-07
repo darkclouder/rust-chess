@@ -10,6 +10,7 @@ use std::fmt;
 use super::basic::Player;
 use super::basic::Coordinate;
 use super::board::Board;
+use super::board::TileContent;
 use crate::utils::ValueError;
 
 
@@ -163,6 +164,14 @@ impl Error for MoveError {}
 impl fmt::Display for MoveError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "MoveError")
+    }
+}
+
+
+pub fn is_friendly_fire(board: &Board, coordinate: &Coordinate) -> bool {
+    match board.get_tile(coordinate) {
+        TileContent::Piece(piece) => piece.player == board.turn,
+        TileContent::Empty => false,
     }
 }
 

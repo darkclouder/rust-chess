@@ -57,10 +57,8 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
                 return Err(MoveError::IllegalMove);
             }
 
-            if let TileContent::Piece(piece) = board.get_tile(to) {
-                if piece.player == board.turn {
-                    return Err(MoveError::IllegalMove);
-                }
+            if is_friendly_fire(&board, &to) {
+                return Err(MoveError::IllegalMove);
             }
 
             let (from_x, from_y) = from.values();
