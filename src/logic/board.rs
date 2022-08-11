@@ -169,7 +169,7 @@ impl TileContent {
 
 
 const DEFAULT_PIECE_CONFIGURATION: [[char; BOARD_SIZE]; BOARD_SIZE] = [
-    ['r', 'n', 'b', 'k', 'q', 'b', 'n', 'r'],
+    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
     ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
     [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
     [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
