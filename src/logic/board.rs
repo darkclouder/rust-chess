@@ -24,7 +24,7 @@ impl Board {
             .into_iter()
             .map(|row| {
                 row.into_iter()
-                    .map(|letter| TileContent::from_letter(letter))
+                    .map(TileContent::from_letter)
                     .collect::<Vec<_>>()
                     .try_into()
                     .duwrp()
@@ -42,10 +42,7 @@ impl Board {
 
     pub fn turned(&self) -> Self {
         let mut new_board = self.clone();
-        new_board.turn = match self.turn {
-            Player::White => Player::Black,
-            Player::Black => Player::White,
-        };
+        new_board.turn = self.turn.other();
         new_board.en_passant = None;
         new_board
     }
