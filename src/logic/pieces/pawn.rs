@@ -2,8 +2,7 @@ use crate::logic::basic::{Coordinate, Player};
 use crate::logic::board::{Board, TileContent, BOARD_SIZE};
 use crate::utils::ValueError;
 
-use super::{MoveError, Move, PieceType};
-
+use super::{Move, MoveError, PieceType};
 
 pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
     let mut moves: Vec<Move> = Vec::new();
@@ -28,7 +27,6 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
 
     moves
 }
-
 
 fn all_moves_regular(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
     let mut moves: Vec<Coordinate> = Vec::new();
@@ -66,7 +64,7 @@ fn all_moves_regular(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
             }
         }
 
-        if let Ok(to_right) = Coordinate::try_new(to_x + 1, to_y){
+        if let Ok(to_right) = Coordinate::try_new(to_x + 1, to_y) {
             // - Regular capture
             if let TileContent::Piece(piece) = board.get_tile(&to_right) {
                 if piece.player != board.turn {
@@ -83,10 +81,12 @@ fn all_moves_regular(board: &Board, from: &Coordinate) -> Vec<Coordinate> {
     moves
 }
 
-
 pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
     if let Move::Promotion(_, new_type) = a_move {
-        if !matches!(new_type, PieceType::Queen | PieceType::Rook | PieceType::Knight | PieceType::Bishop) {
+        if !matches!(
+            new_type,
+            PieceType::Queen | PieceType::Rook | PieceType::Knight | PieceType::Bishop
+        ) {
             return Err(MoveError::IllegalMove);
         }
     }
@@ -108,15 +108,21 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
                 new_board.set_tile(to, new_tile);
                 Ok(new_board)
             } else {
-                panic!("Illegal state at move {:?} of player {:?} from {}", a_move, board.turn, from);
+                panic!(
+                    "Illegal state at move {:?} of player {:?} from {}",
+                    a_move, board.turn, from
+                );
             }
-        },
+        }
         _ => Err(MoveError::IllegalMove),
     }
 }
 
-
-fn move_piece_regular(board: &Board, from: &Coordinate, to: &Coordinate) -> Result<Board, MoveError> {
+fn move_piece_regular(
+    board: &Board,
+    from: &Coordinate,
+    to: &Coordinate,
+) -> Result<Board, MoveError> {
     // Piece at `from` and `piece` is from player with turn already checked
     let from_x = from.xv();
     let to_x = to.xv();
@@ -171,7 +177,7 @@ fn move_piece_regular(board: &Board, from: &Coordinate, to: &Coordinate) -> Resu
                 } else {
                     Err(MoveError::IllegalMove)
                 }
-            },
+            }
             // - En Passant
             TileContent::Empty => {
                 if is_en_passant(board, to) {
@@ -183,13 +189,12 @@ fn move_piece_regular(board: &Board, from: &Coordinate, to: &Coordinate) -> Resu
                 } else {
                     Err(MoveError::IllegalMove)
                 }
-            },
-        }
+            }
+        };
     }
 
     Err(MoveError::IllegalMove)
 }
-
 
 fn is_player_pawn_original_pos(board: &Board, coordinate: &Coordinate) -> bool {
     (match board.turn {
@@ -198,8 +203,11 @@ fn is_player_pawn_original_pos(board: &Board, coordinate: &Coordinate) -> bool {
     } == coordinate.yv())
 }
 
-
-fn coordinate_up(player: &Player, from: &Coordinate, steps: usize) -> Result<Coordinate, ValueError> {
+fn coordinate_up(
+    player: &Player,
+    from: &Coordinate,
+    steps: usize,
+) -> Result<Coordinate, ValueError> {
     let from_x = from.xv();
     let from_y = from.yv();
 
@@ -210,7 +218,6 @@ fn coordinate_up(player: &Player, from: &Coordinate, steps: usize) -> Result<Coo
     }
 }
 
-
 fn is_en_passant(board: &Board, to: &Coordinate) -> bool {
     board
         .en_passant
@@ -219,7 +226,6 @@ fn is_en_passant(board: &Board, to: &Coordinate) -> bool {
         .map_or(false, |target| target == *to)
 }
 
-
 fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> bool {
     match coordinate_up(player, from, 1) {
         Ok(up) => up.yv() == to.yv() && from.xv().abs_diff(to.xv()) == 1,
@@ -227,16 +233,14 @@ fn is_move_up_diagonal(player: &Player, from: &Coordinate, to: &Coordinate) -> b
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::logic::basic::Player;
     use crate::logic::board::{Board, TileContent};
-    use crate::logic::pieces::{PieceType, Move, Piece};
-    use crate::logic::pieces::tests::{c, m, assert_all_moves_valid, assert_valid_in_all_moves};
+    use crate::logic::pieces::tests::{assert_all_moves_valid, assert_valid_in_all_moves, c, m};
+    use crate::logic::pieces::{Move, Piece, PieceType};
 
-    use super::{move_piece, all_moves};
-
+    use super::{all_moves, move_piece};
 
     fn test_board() -> Board {
         Board::from_configuration([
@@ -250,7 +254,6 @@ mod tests {
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
         ])
     }
-
 
     #[test]
     fn test_all_moves_are_valid() {
@@ -270,7 +273,6 @@ mod tests {
             all_moves,
         );
     }
-
 
     #[test]
     fn test_all_valid_are_moves() {
@@ -311,7 +313,6 @@ mod tests {
         }
     }
 
-    
     #[test]
     fn test_regular_moves() {
         let board = test_board();
@@ -334,7 +335,6 @@ mod tests {
         assert!(move_piece(&turned, &c(7, 5), &m(7, 6)).is_err());
     }
 
-
     #[test]
     fn test_double_moves() {
         let board = test_board();
@@ -347,14 +347,16 @@ mod tests {
         assert!(move_piece(&turned, &c(4, 3), &m(4, 5)).is_err());
     }
 
-
     #[test]
     fn test_regular_captures() {
         let board = test_board();
 
         let new_board = move_piece(&board, &c(6, 6), &m(7, 5)).unwrap();
         assert!(matches!(new_board.get_tile(&c(6, 6)), TileContent::Empty));
-        assert!(matches!(new_board.get_tile(&c(7, 5)), TileContent::Piece(_)));
+        assert!(matches!(
+            new_board.get_tile(&c(7, 5)),
+            TileContent::Piece(_)
+        ));
         if let TileContent::Piece(piece) = new_board.get_tile(&c(7, 5)) {
             assert!(matches!(piece.piece_type, PieceType::Pawn));
             assert!(matches!(piece.player, Player::White));
@@ -387,25 +389,21 @@ mod tests {
         assert!(move_piece(&turned, &c(5, 4), &m(6, 5)).is_err());
     }
 
-
     #[test]
     fn test_promotion() {
         let board = test_board();
 
         assert!(move_piece(&board, &c(4, 1), &m(4, 0)).is_err());
 
-        assert!(move_piece(
-            &board,
-            &c(4, 1),
-            &Move::Promotion(c(4, 0), PieceType::King)
-        ).is_err());
+        assert!(move_piece(&board, &c(4, 1), &Move::Promotion(c(4, 0), PieceType::King)).is_err());
 
         {
             let result = move_piece(
                 &board,
                 &c(4, 1),
-                &Move::Promotion(c(4, 0), PieceType::Queen)
-            ).unwrap();
+                &Move::Promotion(c(4, 0), PieceType::Queen),
+            )
+            .unwrap();
 
             if let TileContent::Piece(piece) = result.get_tile(&c(4, 0)) {
                 assert!(matches!(piece.piece_type, PieceType::Queen));

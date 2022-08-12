@@ -1,5 +1,5 @@
-use crate::logic::board::BOARD_SIZE;
 use crate::logic::basic::Coordinate;
+use crate::logic::board::BOARD_SIZE;
 use crate::utils::ValueError;
 
 use std::str::Chars;
@@ -7,12 +7,10 @@ use std::str::Chars;
 use super::game::GameState;
 use super::pieces::PieceType;
 
-
 pub struct PartialCoordinate {
     x: Option<usize>,
     y: Option<usize>,
 }
-
 
 impl PartialCoordinate {
     pub fn try_new(xo: Option<usize>, yo: Option<usize>) -> Result<Self, ValueError> {
@@ -22,17 +20,22 @@ impl PartialCoordinate {
         })
     }
 
-    pub fn xv(&self) -> Option<usize> { self.x }
-    pub fn yv(&self) -> Option<usize> { self.y }
+    pub fn xv(&self) -> Option<usize> {
+        self.x
+    }
+    pub fn yv(&self) -> Option<usize> {
+        self.y
+    }
 
-    pub fn to_complete(& self) -> Option<Coordinate> {
+    pub fn to_complete(&self) -> Option<Coordinate> {
         match (self.x, self.y) {
-            (Some(actual_x), Some(actual_y)) => Some(Coordinate::try_new(actual_x, actual_y).unwrap()),
-            _ => None
+            (Some(actual_x), Some(actual_y)) => {
+                Some(Coordinate::try_new(actual_x, actual_y).unwrap())
+            }
+            _ => None,
         }
     }
 }
-
 
 pub enum Intent {
     Move(Option<PartialCoordinate>, Option<PartialCoordinate>),
@@ -41,7 +44,6 @@ pub enum Intent {
     Invalid,
     None,
 }
-
 
 impl Intent {
     pub fn from_partial_command(state: &GameState, cmd: &str) -> Self {
@@ -52,22 +54,22 @@ impl Intent {
                     Ok(None) => (),
                     Err(_) => (),
                 };
-        
+
                 match Self::parse_surrender(cmd) {
                     Some(intent) => return intent,
                     None => (),
                 };
-            },
+            }
             GameState::SelectPromotionType(..) => {
                 match Self::try_parse_select_promotion_type(cmd) {
                     Ok(Some(intent)) => return intent,
                     Ok(None) => (),
                     Err(_) => (),
                 };
-            },
+            }
             GameState::CheckMate => {
                 () // TODO
-            },
+            }
         }
 
         match cmd.len() {
@@ -97,7 +99,7 @@ impl Intent {
                     None => Ok(Some(Self::Move(Some(first), second_coord))),
                     _ => Err(ValueError),
                 }
-        },
+            }
             None => Ok(None),
         }
     }
@@ -107,11 +109,10 @@ impl Intent {
 
         match prefixes_from_chars(&mut chars, "surrender") {
             true => Some(Self::Surrender),
-            false => None
+            false => None,
         }
     }
 }
-
 
 fn coordinate_from_chars(chars: &mut Chars) -> Result<Option<PartialCoordinate>, ValueError> {
     let column = match chars.next() {
@@ -130,7 +131,6 @@ fn coordinate_from_chars(chars: &mut Chars) -> Result<Option<PartialCoordinate>,
     }
 }
 
-
 fn prefixes_from_chars(chars: &mut Chars, target_str: &str) -> bool {
     // But target on left side of zip to make sure
     // chars does not advance when target_str is done
@@ -142,14 +142,12 @@ fn prefixes_from_chars(chars: &mut Chars, target_str: &str) -> bool {
     true
 }
 
-
 fn char_to_column(letter: char) -> Result<usize, ValueError> {
     match letter {
         c @ 'A'..='H' => Ok(c as usize - 'A' as usize),
         _ => Err(ValueError),
     }
 }
-
 
 fn char_to_row(letter: char) -> Result<usize, ValueError> {
     match letter {

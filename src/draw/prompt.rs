@@ -1,14 +1,11 @@
 use termion::event::Key;
 
-
 const MAX_LINE_LENGTH: usize = 16;
-
 
 pub struct Prompt {
     line: [char; MAX_LINE_LENGTH],
     position: usize,
 }
-
 
 impl Prompt {
     pub fn default() -> Self {
@@ -26,7 +23,7 @@ impl Prompt {
         }
     }
 
-    pub fn get_line(& self) -> String {
+    pub fn get_line(&self) -> String {
         self.line[0..self.position].iter().collect()
     }
 

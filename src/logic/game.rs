@@ -1,8 +1,7 @@
-use crate::logic::basic::{Coordinate};
+use crate::logic::basic::Coordinate;
 use crate::logic::board::{Board, TileContent};
 
-use super::pieces::{MoveError, Move, PieceType};
-
+use super::pieces::{Move, MoveError, PieceType};
 
 pub enum GameState {
     WaitMove(bool),
@@ -10,12 +9,10 @@ pub enum GameState {
     CheckMate,
 }
 
-
 pub struct Game {
     pub board: Board,
     pub state: GameState,
 }
-
 
 impl Game {
     pub fn default() -> Self {
@@ -36,7 +33,7 @@ impl Game {
 
     pub fn can_move_from(&self, coordinate: &Coordinate) -> bool {
         let tile = self.board.get_tile(coordinate);
-        
+
         match tile {
             TileContent::Empty => false,
             TileContent::Piece(piece) => piece.player == self.board.turn,
@@ -45,9 +42,9 @@ impl Game {
 
     pub fn can_move(&self, from: &Coordinate, to: &Coordinate) -> bool {
         let tile = self.board.get_tile(from);
-        
+
         match tile {
-            TileContent::Piece(piece) => piece.can_move( &self.board, from, to),
+            TileContent::Piece(piece) => piece.can_move(&self.board, from, to),
             TileContent::Empty => false,
         }
     }
@@ -64,7 +61,7 @@ impl Game {
             Ok(new_board) => {
                 self.board = new_board;
                 Ok(())
-            },
+            }
             Err(err) => Err(err),
         }
     }
@@ -76,11 +73,11 @@ impl Game {
             Ok(new_board) => {
                 self.board = new_board;
                 Ok(())
-            },
+            }
             Err(MoveError::PromotionRequired) => {
                 self.state = GameState::SelectPromotionType(from.clone(), to.clone());
                 Ok(())
-            },
+            }
             Err(err) => Err(err),
         }
     }

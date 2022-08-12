@@ -1,13 +1,11 @@
-use crate::logic::pieces::Piece;
 use crate::logic::basic::{Coordinate, Player};
+use crate::logic::pieces::Piece;
 use crate::utils::DiscreetUnwrap;
 
 use super::pieces::PieceType;
 
-
 pub const BOARD_SIZE: usize = 8;
 pub const BOARD_MAX_AXIS: usize = BOARD_SIZE - 1;
-
 
 #[derive(Clone)]
 pub struct Board {
@@ -15,7 +13,6 @@ pub struct Board {
     pub turn: Player,
     pub en_passant: Option<Coordinate>,
 }
-
 
 impl Board {
     pub fn default() -> Self {
@@ -26,11 +23,8 @@ impl Board {
         let tiles = configuration
             .into_iter()
             .map(|row| {
-                row
-                    .into_iter()
-                    .map(|letter| {
-                        TileContent::from_letter(letter)
-                    })
+                row.into_iter()
+                    .map(|letter| TileContent::from_letter(letter))
                     .collect::<Vec<_>>()
                     .try_into()
                     .duwrp()
@@ -98,7 +92,11 @@ impl Board {
         let (king_coord, enemy_coords) = self.find_pieces_for_check(player);
 
         // TODO: Refactor this soo we don't need to copy entire board for every check.
-        let board = if *player == self.turn { self.turned() } else { self.clone() };
+        let board = if *player == self.turn {
+            self.turned()
+        } else {
+            self.clone()
+        };
 
         for enemy_coord in enemy_coords {
             if let TileContent::Piece(piece) = self.get_tile(&enemy_coord) {
@@ -149,24 +147,21 @@ impl Board {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TileContent {
     Empty,
     Piece(Piece),
 }
 
-
 impl TileContent {
     pub fn from_letter(letter: char) -> Self {
         if letter == ' ' {
-            return Self::Empty
+            return Self::Empty;
         }
 
         Self::Piece(Piece::from_letter(letter).unwrap())
     }
 }
-
 
 const DEFAULT_PIECE_CONFIGURATION: [[char; BOARD_SIZE]; BOARD_SIZE] = [
     ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],

@@ -1,15 +1,13 @@
 use crate::logic::basic::Coordinate;
 use crate::logic::board::{Board, TileContent, BOARD_SIZE};
 
-use super::{Move, MoveError, is_friendly_fire};
-
+use super::{is_friendly_fire, Move, MoveError};
 
 pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
     let mut moves = all_moves_straight(board, from);
     moves.append(&mut all_moves_diagonal(board, from));
     moves
 }
-
 
 pub fn all_moves_straight(board: &Board, from: &Coordinate) -> Vec<Move> {
     let mut moves = Vec::new();
@@ -71,9 +69,8 @@ pub fn all_moves_straight(board: &Board, from: &Coordinate) -> Vec<Move> {
     moves
 }
 
-
 pub fn all_moves_diagonal(board: &Board, from: &Coordinate) -> Vec<Move> {
-       let mut moves = Vec::new();
+    let mut moves = Vec::new();
 
     let (from_x, from_y) = from.values();
 
@@ -132,7 +129,6 @@ pub fn all_moves_diagonal(board: &Board, from: &Coordinate) -> Vec<Move> {
     moves
 }
 
-
 pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
     match a_move {
         Move::Promotion(..) => Err(MoveError::IllegalMove),
@@ -162,10 +158,9 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
             let mut new_board = board.turned();
             new_board.move_tile(from, to);
             Ok(new_board)
-        },
+        }
     }
 }
-
 
 pub fn is_straight(from: &Coordinate, to: &Coordinate) -> bool {
     let (from_x, from_y) = from.values();
@@ -173,13 +168,11 @@ pub fn is_straight(from: &Coordinate, to: &Coordinate) -> bool {
     from_x == to_x || from_y == to_y
 }
 
-
 pub fn is_diagonal(from: &Coordinate, to: &Coordinate) -> bool {
     let (from_x, from_y) = from.values();
     let (to_x, to_y) = to.values();
     from_x.abs_diff(to_x) == from_y.abs_diff(to_y)
 }
-
 
 pub fn piece_between_straight(board: &Board, from: &Coordinate, to: &Coordinate) -> bool {
     let (from_x, from_y) = from.values();
@@ -188,7 +181,7 @@ pub fn piece_between_straight(board: &Board, from: &Coordinate, to: &Coordinate)
     if from_x == to_x {
         for y in (from_y.min(to_y) + 1)..(from_y.max(to_y)) {
             let coord = Coordinate::try_new(from_x, y).unwrap();
-            
+
             if !matches!(board.get_tile(&coord), TileContent::Empty) {
                 return true;
             }
@@ -202,10 +195,9 @@ pub fn piece_between_straight(board: &Board, from: &Coordinate, to: &Coordinate)
             }
         }
     }
-    
+
     false
 }
-
 
 pub fn piece_between_diagonal(board: &Board, from: &Coordinate, to: &Coordinate) -> bool {
     let (from_x, from_y) = from.values();
@@ -219,7 +211,8 @@ pub fn piece_between_diagonal(board: &Board, from: &Coordinate, to: &Coordinate)
         let coord = Coordinate::try_new(
             (from_x as i16 + (i as i16 * delta_x)) as usize,
             (from_y as i16 + (i as i16 * delta_y)) as usize,
-        ).unwrap();
+        )
+        .unwrap();
 
         if !matches!(board.get_tile(&coord), TileContent::Empty) {
             return true;
@@ -229,15 +222,13 @@ pub fn piece_between_diagonal(board: &Board, from: &Coordinate, to: &Coordinate)
     false
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::logic::board::Board;
+    use crate::logic::pieces::tests::{assert_all_moves_valid, assert_valid_in_all_moves, c, m};
     use crate::logic::pieces::Piece;
-    use crate::logic::pieces::tests::{assert_all_moves_valid, assert_valid_in_all_moves, m, c};
 
-    use super::{move_piece, all_moves};
-
+    use super::{all_moves, move_piece};
 
     fn test_board() -> Board {
         Board::from_configuration([
@@ -251,7 +242,6 @@ mod tests {
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
         ])
     }
-
 
     #[test]
     fn test_all_moves_are_valid() {
@@ -271,7 +261,6 @@ mod tests {
             all_moves,
         );
     }
-
 
     #[test]
     fn test_all_valid_are_moves() {

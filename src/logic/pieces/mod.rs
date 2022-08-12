@@ -1,19 +1,18 @@
+pub mod bishop;
+pub mod king;
+pub mod knight;
 pub mod pawn;
 pub mod queen;
 pub mod rook;
-pub mod bishop;
-pub mod knight;
-pub mod king;
 
 use std::error::Error;
 use std::fmt;
 
-use super::basic::Player;
 use super::basic::Coordinate;
+use super::basic::Player;
 use super::board::Board;
 use super::board::TileContent;
 use crate::utils::ValueError;
-
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum PieceType {
@@ -25,7 +24,6 @@ pub enum PieceType {
     Pawn,
 }
 
-
 impl PieceType {
     pub fn from_letter(letter: char) -> Result<Self, ValueError> {
         Ok(match letter {
@@ -35,7 +33,7 @@ impl PieceType {
             'B' => Self::Bishop,
             'N' => Self::Knight,
             'P' => Self::Pawn,
-            _ => Err(ValueError)?
+            _ => Err(ValueError)?,
         })
     }
 
@@ -68,7 +66,12 @@ impl PieceType {
         )
     }
 
-    pub fn move_piece(&self, board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
+    pub fn move_piece(
+        &self,
+        board: &Board,
+        from: &Coordinate,
+        a_move: &Move,
+    ) -> Result<Board, MoveError> {
         // Piece at `from` and `piece` is from player with turn already checked
         match self {
             Self::Pawn => pawn::move_piece(board, from, a_move),
@@ -92,14 +95,12 @@ impl PieceType {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Piece {
     pub player: Player,
     pub piece_type: PieceType,
     pub moved: bool,
 }
-
 
 impl Piece {
     pub fn from_letter(letter: char) -> Result<Self, ValueError> {
@@ -108,7 +109,7 @@ impl Piece {
             'a'..='z' => Player::Black,
             _ => Err(ValueError)?,
         };
-        
+
         let upper_letter = letter.to_ascii_uppercase();
         let piece_type = PieceType::from_letter(upper_letter)?;
 
@@ -133,7 +134,12 @@ impl Piece {
         self.piece_type.can_move(board, from, to)
     }
 
-    pub fn move_piece(&self, board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
+    pub fn move_piece(
+        &self,
+        board: &Board,
+        from: &Coordinate,
+        a_move: &Move,
+    ) -> Result<Board, MoveError> {
         // Piece at `from` and already checked
 
         if self.player != board.turn {
@@ -160,13 +166,11 @@ impl Piece {
     }
 }
 
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Move {
     Regular(Coordinate),
     Promotion(Coordinate, PieceType),
 }
-
 
 impl Move {
     pub fn get_to(&self) -> &Coordinate {
@@ -176,7 +180,6 @@ impl Move {
         }
     }
 }
-
 
 #[derive(Debug)]
 pub enum MoveError {
@@ -191,7 +194,6 @@ impl fmt::Display for MoveError {
     }
 }
 
-
 pub fn is_friendly_fire(board: &Board, coordinate: &Coordinate) -> bool {
     match board.get_tile(coordinate) {
         TileContent::Piece(piece) => piece.player == board.turn,
@@ -199,15 +201,14 @@ pub fn is_friendly_fire(board: &Board, coordinate: &Coordinate) -> bool {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::fmt::Debug;
 
     use crate::logic::basic::Coordinate;
-    use crate::logic::board::{Board, BOARD_SIZE, TileContent};
+    use crate::logic::board::{Board, TileContent, BOARD_SIZE};
 
-    use super::{MoveError, Move, PieceType, Piece};
+    use super::{Move, MoveError, Piece, PieceType};
 
     type MovePieceFn = fn(&Board, &Coordinate, &Move) -> Result<Board, MoveError>;
     type AllMovesFn = fn(&Board, &Coordinate) -> Vec<Move>;
@@ -242,10 +243,7 @@ mod tests {
                 let from = c(x, y);
 
                 let mut board_with_piece = board.clone();
-                board_with_piece.set_tile(
-                    &from,
-                    TileContent::Piece(piece.clone()),
-                );
+                board_with_piece.set_tile(&from, TileContent::Piece(piece.clone()));
 
                 assert_all_moves_valid_from(
                     &board_with_piece,
@@ -261,13 +259,16 @@ mod tests {
         board: &Board,
         from: &Coordinate,
         moves: &Vec<Move>,
-        move_piece: MovePieceFn
+        move_piece: MovePieceFn,
     ) {
         for a_move in moves {
             match move_piece(board, from, a_move) {
                 Ok(new_board) => {
-                    assert!(matches!(new_board.get_tile(a_move.get_to()), TileContent::Piece(_)))
-                },
+                    assert!(matches!(
+                        new_board.get_tile(a_move.get_to()),
+                        TileContent::Piece(_)
+                    ))
+                }
                 Err(e) => {
                     panic!(
                         "Could not move from {} to {:?} as {:?}: {}",
@@ -277,7 +278,6 @@ mod tests {
             };
         }
     }
-
 
     pub fn assert_valid_in_all_moves(
         board: &Board,
@@ -292,22 +292,16 @@ mod tests {
                 let mut board_with_piece = board.clone();
                 board_with_piece.set_tile(&from, TileContent::Piece(piece.clone()));
 
-                assert_valid_in_all_moves_from(
-                    &board_with_piece,
-                    &c(x,y),
-                    move_piece,
-                    all_moves,
-                );
+                assert_valid_in_all_moves_from(&board_with_piece, &c(x, y), move_piece, all_moves);
             }
         }
     }
-
 
     fn assert_valid_in_all_moves_from(
         board: &Board,
         from: &Coordinate,
         move_piece: MovePieceFn,
-        all_moves: AllMovesFn
+        all_moves: AllMovesFn,
     ) {
         let mut valid_moves: Vec<Move> = Vec::new();
 
@@ -339,7 +333,7 @@ mod tests {
         }
 
         assert_vecs_same_elements(
-            &mut valid_moves, 
+            &mut valid_moves,
             &mut all_moves(board, from),
             &|m: &Move| match m {
                 Move::Regular(to) => (to.xv(), to.yv(), "".to_string()),

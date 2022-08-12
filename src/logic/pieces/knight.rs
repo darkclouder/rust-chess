@@ -3,14 +3,13 @@ use crate::logic::board::{Board, TileContent, BOARD_SIZE};
 
 use super::{Move, MoveError};
 
-
 pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
     let (x, y) = from.values();
     let mut moves = Vec::with_capacity(8);
 
     for delta_x in 1..=2 {
         let delta_y = 3 - delta_x;
-        
+
         if x + delta_x < BOARD_SIZE && y + delta_y < BOARD_SIZE {
             let coord = Coordinate::try_new(x + delta_x, y + delta_y).unwrap();
             if !is_friendly_fire(board, &coord) {
@@ -40,14 +39,12 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
     moves
 }
 
-
 fn is_friendly_fire(board: &Board, coordinate: &Coordinate) -> bool {
     match board.get_tile(coordinate) {
         TileContent::Piece(piece) => piece.player == board.turn,
         TileContent::Empty => false,
     }
 }
-
 
 pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
     match a_move {
@@ -74,19 +71,17 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
             } else {
                 Err(MoveError::IllegalMove)
             }
-        },
+        }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use crate::logic::board::Board;
+    use crate::logic::pieces::tests::{assert_all_moves_valid, assert_valid_in_all_moves, c, m};
     use crate::logic::pieces::Piece;
-    use crate::logic::pieces::tests::{assert_all_moves_valid, assert_valid_in_all_moves, m, c};
 
-    use super::{move_piece, all_moves};
-
+    use super::{all_moves, move_piece};
 
     fn test_board() -> Board {
         Board::from_configuration([
@@ -100,7 +95,6 @@ mod tests {
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
         ])
     }
-
 
     #[test]
     fn test_all_moves_are_valid() {
@@ -120,7 +114,6 @@ mod tests {
             all_moves,
         );
     }
-
 
     #[test]
     fn test_all_valid_are_moves() {

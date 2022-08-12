@@ -1,31 +1,25 @@
-use crate::logic::pieces::{PieceType, MoveError};
-use crate::{
-    FORMAT_OUTPUT_TURN,
-    FORMAT_OUTPUT_ERROR_MOVE_FROM,
-    FORMAT_OUTPUT_ERROR_MOVE_FULL,
-    FORMAT_OUTPUT_TURN_SHORT,
-    FORMAT_OUTPUT_CHECKMATE, FORMAT_PROMPT_MOVE, FORMAT_OUTPUT_CIRITCAL_ERROR,
-};
-use crate::draw::text::OUTPUT_ENTER_MOVE;
 use crate::draw::prompt::Prompt;
 use crate::draw::terminal::Terminal;
+use crate::draw::text::OUTPUT_ENTER_MOVE;
+use crate::logic::basic::{column_to_name, row_to_name, Coordinate, FieldColor, Player};
+use crate::logic::board::{TileContent, BOARD_MAX_AXIS, BOARD_SIZE};
 use crate::logic::game::{Game, GameState};
-use crate::logic::basic::{
-    FieldColor,
-    Player,
-    Coordinate,
-    row_to_name,
-    column_to_name,
-};
-use crate::logic::board::{TileContent, BOARD_SIZE, BOARD_MAX_AXIS};
 use crate::logic::intent::{Intent, PartialCoordinate};
+use crate::logic::pieces::{MoveError, PieceType};
+use crate::{
+    FORMAT_OUTPUT_CHECKMATE, FORMAT_OUTPUT_CIRITCAL_ERROR, FORMAT_OUTPUT_ERROR_MOVE_FROM,
+    FORMAT_OUTPUT_ERROR_MOVE_FULL, FORMAT_OUTPUT_TURN, FORMAT_OUTPUT_TURN_SHORT,
+    FORMAT_PROMPT_MOVE,
+};
 
+use std::io::Write;
 use termion::color;
 use termion::event::Key;
-use std::io::Write;
 
-use super::text::{OUTPUT_HINT_PROMOTE, OUTPUT_ILLEGAL_MOVE, OUTPUT_MOVE_ERROR_CHECK, OUTPUT_STATE_CHECK, OUTPUT_INVALID_COMMAND};
-
+use super::text::{
+    OUTPUT_HINT_PROMOTE, OUTPUT_ILLEGAL_MOVE, OUTPUT_INVALID_COMMAND, OUTPUT_MOVE_ERROR_CHECK,
+    OUTPUT_STATE_CHECK,
+};
 
 #[derive(Copy, Clone)]
 enum BoardHighlight {
@@ -34,7 +28,6 @@ enum BoardHighlight {
     Secondary,
     Error,
 }
-
 
 impl BoardHighlight {
     fn background_color(&self) -> String {
@@ -56,7 +49,6 @@ impl BoardHighlight {
     }
 }
 
-
 pub struct GameRenderer<'a> {
     game: &'a mut Game,
     terminal: Terminal,
@@ -66,7 +58,6 @@ pub struct GameRenderer<'a> {
     highlighted_cells: [[BoardHighlight; BOARD_SIZE]; BOARD_SIZE],
     output_text: String,
 }
-
 
 impl<'a> GameRenderer<'a> {
     pub fn new(game: &'a mut Game) -> Self {
@@ -108,10 +99,12 @@ impl<'a> GameRenderer<'a> {
                 if let Some(to) = maybe_to {
                     if let Some(coord_to) = to.to_complete() {
                         if self.game.can_move(&coord_from, &coord_to) {
-                            self.highlighted_cells[coord_to.yv()][coord_to.xv()] = BoardHighlight::Secondary;
+                            self.highlighted_cells[coord_to.yv()][coord_to.xv()] =
+                                BoardHighlight::Secondary;
                             self.set_output_text(OUTPUT_ENTER_MOVE.to_string());
                         } else {
-                            self.highlighted_cells[coord_to.yv()][coord_to.xv()] = BoardHighlight::Error;
+                            self.highlighted_cells[coord_to.yv()][coord_to.xv()] =
+                                BoardHighlight::Error;
                             self.set_output_text(FORMAT_OUTPUT_ERROR_MOVE_FULL!(
                                 coord_from.to_field_name(),
                                 coord_to.to_field_name()
@@ -196,8 +189,8 @@ impl<'a> GameRenderer<'a> {
                 } else {
                     line.clone()
                 }
-            },
-            _ => line.clone()
+            }
+            _ => line.clone(),
         }
     }
 
@@ -212,15 +205,14 @@ impl<'a> GameRenderer<'a> {
 
         let intent = Intent::from_partial_command(&self.game.state, &line);
 
-        self.execute_intent(&intent)
-            .unwrap_or_else(
-                |m| self.set_output_text(format!(
-                    "{}{}{}",
-                    color::Fg(color::Red),
-                    m,
-                    color::Fg(color::Reset),
-                ))
-            );
+        self.execute_intent(&intent).unwrap_or_else(|m| {
+            self.set_output_text(format!(
+                "{}{}{}",
+                color::Fg(color::Red),
+                m,
+                color::Fg(color::Reset),
+            ))
+        });
     }
 
     pub fn execute_intent(&mut self, intent: &Intent) -> Result<(), String> {
@@ -234,7 +226,11 @@ impl<'a> GameRenderer<'a> {
 
     fn execute_surrender(&mut self) {
         let turn = &self.game.board.turn;
-        let output_text = format!("{} surrendered. {} wins!", turn.to_label(), turn.other().to_label());
+        let output_text = format!(
+            "{} surrendered. {} wins!",
+            turn.to_label(),
+            turn.other().to_label()
+        );
         self.set_output_text(output_text);
         self.game.reset();
     }
@@ -248,11 +244,11 @@ impl<'a> GameRenderer<'a> {
                     Ok(_) => {
                         self.set_output_text("".to_string());
                         Ok(())
-                    },
+                    }
                     Err(err) => Err(FORMAT_OUTPUT_CIRITCAL_ERROR!(err)),
                 }
-            },
-            _ => Err("Not in promotion state".to_string())
+            }
+            _ => Err("Not in promotion state".to_string()),
         }
     }
 
@@ -262,7 +258,7 @@ impl<'a> GameRenderer<'a> {
                 Ok(_) => {
                     self.set_output_text("".to_string());
                     Ok(())
-                },
+                }
                 Err(MoveError::IsCheck) => Err(OUTPUT_MOVE_ERROR_CHECK.to_string()),
                 Err(_) => Err(OUTPUT_ILLEGAL_MOVE.to_string()),
             }
@@ -296,8 +292,7 @@ impl<'a> GameRenderer<'a> {
     fn draw_output(&mut self, offset_x: usize, offset_y: usize) {
         self.terminal.move_cursor(offset_x, offset_y);
 
-        let output_text = if 
-        self.output_text.is_empty() {
+        let output_text = if self.output_text.is_empty() {
             match self.game.state {
                 GameState::SelectPromotionType(..) => OUTPUT_HINT_PROMOTE.to_string(),
                 GameState::WaitMove(true) => format!(
@@ -384,7 +379,8 @@ impl<'a> GameRenderer<'a> {
 
                 // Background
                 if x < BOARD_SIZE && y < BOARD_SIZE {
-                    let background_color = self.get_background_color_at(&Coordinate::try_new(x, y).unwrap());
+                    let background_color =
+                        self.get_background_color_at(&Coordinate::try_new(x, y).unwrap());
                     let board_highlight = &self.highlighted_cells[y as usize][x as usize];
                     let is_highlighted = !matches!(board_highlight, BoardHighlight::None);
 
@@ -398,14 +394,16 @@ impl<'a> GameRenderer<'a> {
                                     "{}*{}",
                                     board_highlight.background_color(),
                                     color::Bg(color::Reset),
-                                ).unwrap();
+                                )
+                                .unwrap();
                             } else {
                                 write!(
                                     self.terminal.screen,
                                     "{} {}",
                                     background_color,
                                     color::Bg(color::Reset),
-                                ).unwrap();
+                                )
+                                .unwrap();
                             };
                         }
                     }
@@ -436,7 +434,8 @@ impl<'a> GameRenderer<'a> {
                     };
                     let background_color = self.get_background_color_at(&coordinate);
 
-                    self.terminal.move_cursor(pos_x + h_center, pos_y + v_center);
+                    self.terminal
+                        .move_cursor(pos_x + h_center, pos_y + v_center);
                     write!(
                         self.terminal.screen,
                         "{}{}{}{}",
@@ -444,13 +443,14 @@ impl<'a> GameRenderer<'a> {
                         label,
                         color::Bg(color::Reset),
                         color::Fg(color::Reset),
-                    ).unwrap();
+                    )
+                    .unwrap();
                 }
             }
         }
     }
 
-    fn get_background_color_at(& self, coordinate: &Coordinate) -> String {
+    fn get_background_color_at(&self, coordinate: &Coordinate) -> String {
         match coordinate.get_field_color() {
             FieldColor::White => color::Bg(color::White).to_string(),
             FieldColor::Black => color::Bg(color::Black).to_string(),

@@ -1,9 +1,8 @@
 use crate::logic::basic::Coordinate;
-use crate::logic::board::{Board, BOARD_SIZE, TileContent};
+use crate::logic::board::{Board, TileContent, BOARD_SIZE};
 
 use super::queen::piece_between_straight;
-use super::{Move, MoveError, is_friendly_fire, PieceType};
-
+use super::{is_friendly_fire, Move, MoveError, PieceType};
 
 pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
     let (x, y) = from.values();
@@ -47,7 +46,6 @@ pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
     moves
 }
 
-
 pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
     match a_move {
         Move::Promotion(..) => Err(MoveError::IllegalMove),
@@ -80,10 +78,9 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
             } else {
                 Err(MoveError::IllegalMove)
             }
-        },
+        }
     }
 }
-
 
 fn get_castling_rook(board: &Board, from: &Coordinate, to: &Coordinate) -> Option<Coordinate> {
     let (from_x, from_y) = from.values();
@@ -91,35 +88,47 @@ fn get_castling_rook(board: &Board, from: &Coordinate, to: &Coordinate) -> Optio
     let delta_x = from_x.abs_diff(to_x);
     let delta_y = from_y.abs_diff(to_y);
 
-    if delta_y != 0 || delta_x != 2 { return None; }
+    if delta_y != 0 || delta_x != 2 {
+        return None;
+    }
 
     if let TileContent::Piece(piece) = board.get_tile(from) {
-        if piece.moved { return None; }
-    } else { return None; }
+        if piece.moved {
+            return None;
+        }
+    } else {
+        return None;
+    }
 
     let rook_x = if from_x < to_x { BOARD_SIZE - 1 } else { 0 };
     let rook_coord = Coordinate::try_new(rook_x, from_y).unwrap();
 
     if let TileContent::Piece(piece) = board.get_tile(&rook_coord) {
-        if piece.moved { return None; }
-        if !matches!(piece.piece_type, PieceType::Rook) { return None; }
-        if piece.player != board.turn { return None; }
-        if piece_between_straight(board, from, &rook_coord) { return None; }
+        if piece.moved {
+            return None;
+        }
+        if !matches!(piece.piece_type, PieceType::Rook) {
+            return None;
+        }
+        if piece.player != board.turn {
+            return None;
+        }
+        if piece_between_straight(board, from, &rook_coord) {
+            return None;
+        }
         Some(rook_coord)
     } else {
         None
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::logic::board::{Board, TileContent};
-    use crate::logic::pieces::{Piece, PieceType};
     use crate::logic::pieces::tests::{assert_all_moves_valid, assert_valid_in_all_moves, c, m};
+    use crate::logic::pieces::{Piece, PieceType};
 
-    use super::{move_piece, all_moves};
-
+    use super::{all_moves, move_piece};
 
     fn test_board() -> Board {
         Board::from_configuration([
@@ -133,7 +142,6 @@ mod tests {
             [' ', ' ', ' ', ' ', 'K', ' ', ' ', 'R'],
         ])
     }
-
 
     #[test]
     fn test_all_moves_are_valid() {
@@ -153,7 +161,6 @@ mod tests {
             all_moves,
         );
     }
-
 
     #[test]
     fn test_all_valid_are_moves() {
@@ -179,12 +186,18 @@ mod tests {
         let board = test_board();
         {
             let new_board = move_piece(&board, &c(4, 7), &m(6, 7)).unwrap();
-            assert!(matches!(new_board.get_tile(&c(6, 7)), TileContent::Piece(_)));
+            assert!(matches!(
+                new_board.get_tile(&c(6, 7)),
+                TileContent::Piece(_)
+            ));
             if let TileContent::Piece(piece) = new_board.get_tile(&c(6, 7)) {
                 assert!(matches!(piece.piece_type, PieceType::King));
                 assert!(piece.moved);
             }
-            assert!(matches!(new_board.get_tile(&c(4, 7)), TileContent::Piece(_)));
+            assert!(matches!(
+                new_board.get_tile(&c(4, 7)),
+                TileContent::Piece(_)
+            ));
             if let TileContent::Piece(piece) = new_board.get_tile(&c(4, 7)) {
                 assert!(matches!(piece.piece_type, PieceType::Rook));
                 assert!(piece.moved);

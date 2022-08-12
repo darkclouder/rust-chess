@@ -1,15 +1,13 @@
 use std::io::{self, Write};
-use termion::raw::{RawTerminal, IntoRawMode};
-use termion::input::TermRead;
-use termion::screen::AlternateScreen;
 use termion::event::Key;
-
+use termion::input::TermRead;
+use termion::raw::{IntoRawMode, RawTerminal};
+use termion::screen::AlternateScreen;
 
 pub struct Terminal {
     pub screen: AlternateScreen<io::Stdout>,
     _stdout: RawTerminal<std::io::Stdout>,
 }
-
 
 impl Terminal {
     pub fn default() -> Self {
@@ -19,7 +17,7 @@ impl Terminal {
         }
     }
 
-    pub fn read_key_raw(& self) -> Option<Key> {
+    pub fn read_key_raw(&self) -> Option<Key> {
         let result = io::stdin().lock().keys().next();
 
         match result {
@@ -28,7 +26,7 @@ impl Terminal {
         }
     }
 
-    pub fn read_key(& self) -> Option<Key> {
+    pub fn read_key(&self) -> Option<Key> {
         let key = self.read_key_raw();
 
         match key {
@@ -53,14 +51,11 @@ impl Terminal {
                 x.saturating_add(1).try_into().unwrap(),
                 y.saturating_add(1).try_into().unwrap(),
             ),
-        ).unwrap();
+        )
+        .unwrap();
     }
 
     pub fn hide_cursor(&mut self) {
-        write!(
-            self.screen,
-            "{}",
-            termion::cursor::Hide
-        ).unwrap();
-    } 
+        write!(self.screen, "{}", termion::cursor::Hide).unwrap();
+    }
 }

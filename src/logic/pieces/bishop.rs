@@ -2,13 +2,11 @@ use crate::logic::basic::Coordinate;
 use crate::logic::board::Board;
 
 use super::queen::{all_moves_diagonal, is_diagonal, piece_between_diagonal};
-use super::{Move, MoveError, is_friendly_fire};
-
+use super::{is_friendly_fire, Move, MoveError};
 
 pub fn all_moves(board: &Board, from: &Coordinate) -> Vec<Move> {
     all_moves_diagonal(board, from)
 }
-
 
 pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Board, MoveError> {
     match a_move {
@@ -29,19 +27,17 @@ pub fn move_piece(board: &Board, from: &Coordinate, a_move: &Move) -> Result<Boa
             } else {
                 Err(MoveError::IllegalMove)
             }
-        },
+        }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
     use crate::logic::board::Board;
+    use crate::logic::pieces::tests::{assert_all_moves_valid, assert_valid_in_all_moves, c, m};
     use crate::logic::pieces::Piece;
-    use crate::logic::pieces::tests::{assert_all_moves_valid, assert_valid_in_all_moves, m, c};
 
-    use super::{move_piece, all_moves};
-
+    use super::{all_moves, move_piece};
 
     fn test_board() -> Board {
         Board::from_configuration([
@@ -55,7 +51,6 @@ mod tests {
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
         ])
     }
-
 
     #[test]
     fn test_all_moves_are_valid() {
@@ -76,7 +71,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn test_all_valid_are_moves() {
         let board = test_board();
@@ -96,7 +90,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn test_moves() {
         let board = test_board();
@@ -113,7 +106,6 @@ mod tests {
         move_piece(&turned, &c(2, 2), &m(5, 5)).unwrap();
         move_piece(&turned, &c(2, 2), &m(4, 0)).unwrap();
     }
-
 
     #[test]
     fn test_captures() {
