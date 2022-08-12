@@ -21,8 +21,15 @@ pub enum Player {
 impl Player {
     pub fn to_label(&self) -> &str {
         match self {
-            Player::White => LABEL_WHITE,
-            Player::Black => LABEL_BLACK,
+            Self::White => LABEL_WHITE,
+            Self::Black => LABEL_BLACK,
+        }
+    }
+
+    pub fn other(&self) -> Self {
+        match self {
+            Self::White => Self::Black,
+            Self::Black => Self::White,
         }
     }
 }

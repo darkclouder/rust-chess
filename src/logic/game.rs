@@ -28,6 +28,12 @@ impl Game {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.board = Board::default();
+        let is_check = self.board.is_player_on_check(&self.board.turn);
+        self.state = GameState::WaitMove(is_check);
+    }
+
     pub fn can_move_from(&self, coordinate: &Coordinate) -> bool {
         let tile = self.board.get_tile(coordinate);
         

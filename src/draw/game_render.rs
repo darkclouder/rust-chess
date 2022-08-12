@@ -227,8 +227,16 @@ impl<'a> GameRenderer<'a> {
         match intent {
             Intent::Move(Some(a), Some(b)) => self.execute_move(a, b),
             Intent::SelectPromotionType(piece_type) => self.execute_promotion(piece_type),
+            Intent::Surrender => Ok(self.execute_surrender()),
             _ => Err(OUTPUT_INVALID_COMMAND.to_string()),
         }
+    }
+
+    fn execute_surrender(&mut self) {
+        let turn = &self.game.board.turn;
+        let output_text = format!("{} surrendered. {} wins!", turn.to_label(), turn.other().to_label());
+        self.set_output_text(output_text);
+        self.game.reset();
     }
 
     fn execute_promotion(&mut self, piece_type: &PieceType) -> Result<(), String> {
